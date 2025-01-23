@@ -3,49 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte avec outils de dessin</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <title>Test Leaflet Draw</title>
+    <!-- Liens CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.css" />
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <!-- Scripts JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.js"></script>
     <style>
         #map {
+            height: 500px;
             width: 100%;
-            height: 400px;
         }
     </style>
 </head>
 <body>
-    <h1>Test des outils de dessin</h1>
     <div id="map"></div>
     <script>
-        let map = L.map('map').setView([48.8566, 2.3522], 10);
+        // Initialisation de la carte
+        const map = L.map('map').setView([48.8566, 2.3522], 10);
 
-        // Ajouter une couche de base OpenStreetMap
+        // Couche OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap'
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Ajouter les outils de dessin
+        // Groupe pour les éléments dessinés
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
+        // Contrôle des outils de dessin
         const drawControl = new L.Control.Draw({
             edit: {
                 featureGroup: drawnItems
             },
             draw: {
                 polygon: true,
-                rectangle: true
+                rectangle: true,
+                polyline: false,
+                circle: false,
+                marker: false
             }
         });
         map.addControl(drawControl);
 
-        map.on(L.Draw.Event.CREATED, function(event) {
-            const layer = event.layer;
+        // Événement : zone dessinée
+        map.on(L.Draw.Event.CREATED, (e) => {
+            const layer = e.layer;
             drawnItems.addLayer(layer);
-            alert("Zone dessinée !");
+            alert('Zone dessinée avec succès !');
         });
     </script>
 </body>
