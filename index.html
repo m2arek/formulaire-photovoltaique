@@ -137,17 +137,17 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
-            // S'assurer que la carte est bien rendue avant la capture
+            // Forcer la taille correcte de la carte avant la capture
             map.invalidateSize();
 
-            // Capturer la carte avec les dessins
+            // Capturer les dimensions réelles de la carte et ajuster les calques
             const mapContainer = document.getElementById('map');
-            const mapCanvas = mapContainer.querySelector('canvas');
 
             html2canvas(mapContainer, {
-                useCORS: true, // Permet de capturer les tuiles Leaflet
-                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
-                scale: 2, // Améliore la qualité de la capture
+                useCORS: true,
+                allowTaint: true,
+                scale: 2, // Améliore la qualité
+                logging: false
             }).then(canvas => {
                 const doc = new jsPDF();
 
@@ -168,10 +168,10 @@
                     doc.text("Aucune zone sélectionnée.", 10, 40);
                 }
 
-                // Ajouter la capture d'écran de la carte au PDF
+                // Ajouter la capture d'écran au PDF
                 const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 190; // Largeur d'image dans le PDF
-                const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintenir les proportions
+                const imgWidth = 190; // Largeur dans le PDF
+                const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
                 doc.addImage(imgData, 'PNG', 10, 60, imgWidth, imgHeight);
 
                 doc.save("formulaire_photovoltaique.pdf");
