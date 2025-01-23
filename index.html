@@ -52,7 +52,7 @@
     </form>
 
     <script>
-        let map = L.map('map').setView([48.8566, 2.3522], 10); // Coordonnées par défaut (Paris)
+        let map = L.map('map').setView([48.8566, 2.3522], 20); // Coordonnées par défaut (Paris), Zoom max
 
         // Ajouter des couches (OpenStreetMap et vue satellite)
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -66,8 +66,8 @@
             attribution: '© Google'
         });
 
-        // Ajouter la couche OpenStreetMap par défaut
-        osmLayer.addTo(map);
+        // Ajouter la couche satellite par défaut
+        satelliteLayer.addTo(map);
 
         // Ajouter un contrôle pour basculer entre les vues
         const baseMaps = {
@@ -124,7 +124,7 @@
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     console.log(`Coordonnées trouvées : Latitude = ${lat}, Longitude = ${lon}`);
-                    map.setView([lat, lon], 15); // Centre la carte sur l'adresse trouvée
+                    map.setView([lat, lon], 20); // Centre la carte sur l'adresse trouvée avec le zoom max
                 } else {
                     alert('Adresse introuvable.');
                 }
