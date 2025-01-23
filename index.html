@@ -137,21 +137,22 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
-            // S'assurer que la carte est bien rendue avant la capture
+            // Ajuster la carte pour éviter les déformations
             map.invalidateSize();
 
             html2canvas(document.getElementById('map'), {
-                useCORS: true, // Permet de capturer les tuiles Leaflet
-                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
-                logging: false, // Désactive les logs inutiles pour accélérer
-                scale: 2, // Améliore la qualité de la capture
+                useCORS: true,
+                allowTaint: true,
+                scale: 2,
+                logging: false,
+                width: map.getSize().x, // Largeur réelle de la carte
+                height: map.getSize().y // Hauteur réelle de la carte
             }).then(canvas => {
                 const doc = new jsPDF();
 
                 const address = document.getElementById('address').value;
                 const consumption = document.getElementById('consumption').value;
 
-                // Ajouter les données texte
                 doc.text("Formulaire d'installation photovoltaïque", 10, 10);
                 doc.text(`Adresse : ${address}`, 10, 20);
                 doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
@@ -166,11 +167,8 @@
                     doc.text("Aucune zone sélectionnée.", 10, 40);
                 }
 
-                // Ajouter la capture d'écran de la carte au PDF
                 const imgData = canvas.toDataURL('image/png');
-                doc.addImage(imgData, 'PNG', 10, 60, 190, 100); // Ajuste la taille et la position
-
-                // Exporter le PDF
+                doc.addImage(imgData, 'PNG', 10, 60, 190, 100); // Ajuste la position et l'échelle
                 doc.save("formulaire_photovoltaique.pdf");
             });
         }
