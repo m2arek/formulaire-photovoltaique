@@ -140,15 +140,6 @@
             // Forcer la taille correcte de la carte avant la capture
             map.invalidateSize();
 
-            // Appliquer un décalage manuel sur les dessins avant la capture
-            const mapContainer = document.getElementById('map');
-            const leafletDrawLayer = mapContainer.querySelector('.leaflet-draw-layer');
-
-            if (leafletDrawLayer) {
-                leafletDrawLayer.style.transform = 'translate(20%, 20%)'; // Décalage de 20% à droite et en bas
-            }
-
-            // Capturer la carte et les dessins avec html2canvas
             html2canvas(mapContainer, {
                 useCORS: true, // Permet de capturer les tuiles Leaflet
                 allowTaint: true, // Permet de traiter des éléments provenant de sources externes
