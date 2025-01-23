@@ -3,76 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire Centrale Photovoltaïque</title>
+    <title>Carte avec outils de dessin</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.css" />
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
         #map {
             width: 100%;
             height: 400px;
-            margin-bottom: 20px;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        label {
-            font-weight: bold;
-        }
-        input, button {
-            padding: 10px;
-            font-size: 16px;
         }
     </style>
 </head>
 <body>
-    <h1>Formulaire d'installation d'une centrale photovoltaïque</h1>
-    <form id="solarForm" onsubmit="return searchAddress(event);">
-        <label for="address">Adresse :</label>
-        <input type="text" id="address" name="address" placeholder="Entrez l'adresse" required>
-
-        <label for="consumption">Consommation en kWh :</label>
-        <input type="number" id="consumption" name="consumption" placeholder="Entrez la consommation annuelle" required>
-
-        <div id="map"></div>
-
-        <button type="submit">Rechercher l'adresse</button>
-        <button type="button" onclick="saveAsPDF()">Exporter en PDF</button>
-    </form>
-
+    <h1>Test des outils de dessin</h1>
+    <div id="map"></div>
     <script>
-        let map = L.map('map').setView([48.8566, 2.3522], 10); // Coordonnées par défaut (Paris)
+        let map = L.map('map').setView([48.8566, 2.3522], 10);
 
-        // Ajouter des couches (OpenStreetMap et vue satellite)
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Ajouter une couche de base OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
-        });
-
-        const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '© Google'
-        });
-
-        // Ajouter la couche OpenStreetMap par défaut
-        osmLayer.addTo(map);
-
-        // Ajouter un contrôle pour basculer entre les vues
-        const baseMaps = {
-            "Vue Carte": osmLayer,
-            "Vue Satellite": satelliteLayer
-        };
-
-        L.control.layers(baseMaps).addTo(map);
+        }).addTo(map);
 
         // Ajouter les outils de dessin
         const drawnItems = new L.FeatureGroup();
@@ -84,76 +37,16 @@
             },
             draw: {
                 polygon: true,
-                marker: false,
-                polyline: false,
-                circle: false,
-                circlemarker: false,
                 rectangle: true
             }
         });
         map.addControl(drawControl);
 
-        let selectedShape = null;
-
         map.on(L.Draw.Event.CREATED, function(event) {
             const layer = event.layer;
-            drawnItems.clearLayers(); // Supprime les anciennes formes
             drawnItems.addLayer(layer);
-            selectedShape = layer;
+            alert("Zone dessinée !");
         });
-
-        async function searchAddress(event) {
-            event.preventDefault(); // Empêche le rechargement de la page
-            const address = document.getElementById('address').value;
-
-            if (!address) {
-                alert('Veuillez entrer une adresse.');
-                return;
-            }
-
-            try {
-                console.log("Requête envoyée pour l'adresse :", address);
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-                const data = await response.json();
-
-                console.log("Réponse API :", data);
-
-                if (data.length > 0) {
-                    const { lat, lon } = data[0];
-                    console.log(`Coordonnées trouvées : Latitude = ${lat}, Longitude = ${lon}`);
-                    map.setView([lat, lon], 15); // Centre la carte sur l'adresse trouvée
-                } else {
-                    alert('Adresse introuvable.');
-                }
-            } catch (error) {
-                console.error("Erreur lors de la requête API :", error);
-                alert("Erreur lors de la recherche d'adresse. Veuillez réessayer plus tard.");
-            }
-        }
-
-        function saveAsPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            const address = document.getElementById('address').value;
-            const consumption = document.getElementById('consumption').value;
-
-            doc.text("Formulaire d'installation photovoltaïque", 10, 10);
-            doc.text(`Adresse : ${address}`, 10, 20);
-            doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
-
-            if (selectedShape) {
-                const latLngs = selectedShape.getLatLngs()[0].map(coord => {
-                    return `(${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)})`;
-                });
-                doc.text("Zone sélectionnée :", 10, 40);
-                doc.text(latLngs.join("; "), 10, 50);
-            } else {
-                doc.text("Aucune zone sélectionnée.", 10, 40);
-            }
-
-            doc.save("formulaire_photovoltaique.pdf");
-        }
     </script>
 </body>
 </html>
