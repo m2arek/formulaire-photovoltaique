@@ -137,7 +137,11 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
-            html2canvas(document.getElementById('map')).then(canvas => {
+            html2canvas(document.getElementById('map'), {
+                useCORS: true, // Permet de capturer les tuiles Leaflet
+                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
+                logging: true, // Active les logs pour diagnostiquer les problèmes éventuels
+            }).then(canvas => {
                 const doc = new jsPDF();
 
                 const address = document.getElementById('address').value;
