@@ -7,10 +7,11 @@
     <!-- Liens CSS pour Leaflet et Leaflet.Draw -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-    <!-- Scripts JS pour Leaflet et Leaflet.Draw -->
+    <!-- Scripts JS pour Leaflet, Leaflet.Draw et html2canvas -->
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -135,26 +136,33 @@
 
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
 
-            const address = document.getElementById('address').value;
-            const consumption = document.getElementById('consumption').value;
+            html2canvas(document.getElementById('map')).then(canvas => {
+                const doc = new jsPDF();
 
-            doc.text("Formulaire d'installation photovoltaïque", 10, 10);
-            doc.text(`Adresse : ${address}`, 10, 20);
-            doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
+                const address = document.getElementById('address').value;
+                const consumption = document.getElementById('consumption').value;
 
-            if (selectedShape) {
-                const latLngs = selectedShape.getLatLngs()[0].map(coord => {
-                    return `(${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)})`;
-                });
-                doc.text("Zone sélectionnée :", 10, 40);
-                doc.text(latLngs.join("; "), 10, 50);
-            } else {
-                doc.text("Aucune zone sélectionnée.", 10, 40);
-            }
+                doc.text("Formulaire d'installation photovoltaïque", 10, 10);
+                doc.text(`Adresse : ${address}`, 10, 20);
+                doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
 
-            doc.save("formulaire_photovoltaique.pdf");
+                if (selectedShape) {
+                    const latLngs = selectedShape.getLatLngs()[0].map(coord => {
+                        return `(${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)})`;
+                    });
+                    doc.text("Zone sélectionnée :", 10, 40);
+                    doc.text(latLngs.join("; "), 10, 50);
+                } else {
+                    doc.text("Aucune zone sélectionnée.", 10, 40);
+                }
+
+                // Ajouter la capture d'écran de la carte au PDF
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 10, 60, 190, 100);
+
+                doc.save("formulaire_photovoltaique.pdf");
+            });
         }
     </script>
 </body>
