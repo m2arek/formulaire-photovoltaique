@@ -158,21 +158,11 @@
                 doc.text(`Adresse : ${address}`, 10, 20);
                 doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
 
-                if (selectedShape) {
-                    const latLngs = selectedShape.getLatLngs()[0].map(coord => {
-                        return `(${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)})`;
-                    });
-                    doc.text("Zone sélectionnée :", 10, 40);
-                    doc.text(latLngs.join("; "), 10, 50);
-                } else {
-                    doc.text("Aucune zone sélectionnée.", 10, 40);
-                }
-
                 // Ajouter la capture d'écran au PDF
                 const imgData = canvas.toDataURL('image/png');
                 const imgWidth = 190; // Largeur dans le PDF
                 const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
-                doc.addImage(imgData, 'PNG', 10, 60, imgWidth, imgHeight);
+                doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
                 doc.save("formulaire_photovoltaique.pdf");
             });
