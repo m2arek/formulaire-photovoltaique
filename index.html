@@ -161,10 +161,7 @@
                 const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
                 doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
-                // Supprimer le décalage des dessins après la capture
-                if (leafletDrawLayer) {
-                    leafletDrawLayer.style.transform = ''; // Réinitialiser le décalage
-                }
+                
 
                 doc.save("formulaire_photovoltaique.pdf");
             });
