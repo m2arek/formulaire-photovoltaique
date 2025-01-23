@@ -158,11 +158,16 @@
                 doc.text(`Adresse : ${address}`, 10, 20);
                 doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
 
-                // Ajouter la capture d'écran de la carte au PDF
+                // Ajouter la capture d'écran de la carte au PDF avec décalage manuel
                 const imgData = canvas.toDataURL('image/png');
                 const imgWidth = 190; // Largeur d'image dans le PDF
                 const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
-                doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
+
+                // Décalage manuel : 20% vers la droite et en bas
+                const offsetX = imgWidth * 0.2;
+                const offsetY = imgHeight * 0.2;
+
+                doc.addImage(imgData, 'PNG', 10 + offsetX, 50 + offsetY, imgWidth, imgHeight);
 
                 doc.save("formulaire_photovoltaique.pdf");
             });
