@@ -51,11 +51,28 @@
     <script>
         let map = L.map('map').setView([48.8566, 2.3522], 10); // Coordonnées par défaut (Paris)
 
-        // Ajouter une couche OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Ajouter des couches (OpenStreetMap et vue satellite)
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
-        }).addTo(map);
+        });
+
+        const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google'
+        });
+
+        // Ajouter la couche OpenStreetMap par défaut
+        osmLayer.addTo(map);
+
+        // Ajouter un contrôle pour basculer entre les vues
+        const baseMaps = {
+            "Vue Carte": osmLayer,
+            "Vue Satellite": satelliteLayer
+        };
+
+        L.control.layers(baseMaps).addTo(map);
 
         // Ajouter les outils de dessin
         const drawnItems = new L.FeatureGroup();
