@@ -35,7 +35,7 @@
 </head>
 <body>
     <h1>Formulaire d'installation d'une centrale photovoltaïque</h1>
-    <form id="solarForm">
+    <form id="solarForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez l'adresse" required>
 
@@ -44,6 +44,7 @@
 
         <div id="map"></div>
 
+        <button type="submit">Rechercher l'adresse</button>
         <button type="button" onclick="saveAsPDF()">Exporter en PDF</button>
     </form>
 
@@ -83,6 +84,27 @@
             drawnItems.addLayer(layer);
             selectedShape = layer;
         });
+
+        async function searchAddress(event) {
+            event.preventDefault(); // Empêche le rechargement de la page
+            const address = document.getElementById('address').value;
+
+            if (!address) {
+                alert('Veuillez entrer une adresse.');
+                return;
+            }
+
+            // Appeler l'API de géocodage Nominatim
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+            const data = await response.json();
+
+            if (data.length > 0) {
+                const { lat, lon } = data[0];
+                map.setView([lat, lon], 15); // Centre la carte sur l'adresse trouvée
+            } else {
+                alert('Adresse introuvable.');
+            }
+        }
 
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
