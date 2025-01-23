@@ -7,11 +7,12 @@
     <!-- Liens CSS pour Leaflet et Leaflet.Draw -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-    <!-- Scripts JS pour Leaflet, Leaflet.Draw et html2canvas -->
+    <!-- Scripts JS pour Leaflet, Leaflet.Draw, jsPDF, html2canvas et leaflet-image -->
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -137,31 +138,32 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
-            // Forcer la taille correcte de la carte avant la capture
-            map.invalidateSize();
+            // Utiliser leaflet-image pour générer une image de la carte avec les dessins
+            leafletImage(map, function(err, canvas) {
+                if (err) {
+                    console.error("Erreur lors de la génération de l'image de la carte :", err);
+                    alert("Impossible de générer l'image de la carte.");
+                    return;
+                }
 
-            html2canvas(mapContainer, {
-                useCORS: true, // Permet de capturer les tuiles Leaflet
-                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
-                scale: 2, // Améliore la qualité
-                logging: false,
-            }).then((canvas) => {
+                const imgData = canvas.toDataURL('image/png');
+
                 const doc = new jsPDF();
 
                 const address = document.getElementById('address').value;
                 const consumption = document.getElementById('consumption').value;
 
-                doc.text("Formulaire d'installation photovoltaïque", 10, 10);
-                doc.text(`Adresse : ${address}`, 10, 20);
-                doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
+                doc.setFontSize(16);
+                doc.text("Formulaire d'installation photovoltaïque", 10, 20);
+                doc.setFontSize(12);
+                doc.text(`Adresse : ${address}`, 10, 30);
+                doc.text(`Consommation en kWh : ${consumption}`, 10, 40);
 
-                // Ajouter la capture d'écran de la carte au PDF
-                const imgData = canvas.toDataURL('image/png');
+                // Ajouter l'image de la carte au PDF
                 const imgWidth = 190; // Largeur d'image dans le PDF
                 const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
-                doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
-                
+                doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
                 doc.save("formulaire_photovoltaique.pdf");
             });
