@@ -140,13 +140,14 @@
             // S'assurer que la carte est bien rendue avant la capture
             map.invalidateSize();
 
-            html2canvas(document.getElementById('map'), {
+            // Capturer la carte avec les dessins
+            const mapContainer = document.getElementById('map');
+            const mapCanvas = mapContainer.querySelector('canvas');
+
+            html2canvas(mapContainer, {
                 useCORS: true, // Permet de capturer les tuiles Leaflet
                 allowTaint: true, // Permet de traiter des éléments provenant de sources externes
-                logging: false, // Désactive les logs inutiles pour accélérer
                 scale: 2, // Améliore la qualité de la capture
-                width: document.getElementById('map').offsetWidth, // Largeur réelle de la carte
-                height: document.getElementById('map').offsetHeight // Hauteur réelle de la carte
             }).then(canvas => {
                 const doc = new jsPDF();
 
