@@ -137,15 +137,16 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
-            // Forcer la taille correcte de la carte avant la capture
+            // S'assurer que la carte est bien rendue avant la capture
             map.invalidateSize();
 
             html2canvas(document.getElementById('map'), {
                 useCORS: true, // Permet de capturer les tuiles Leaflet
                 allowTaint: true, // Permet de traiter des éléments provenant de sources externes
+                logging: false, // Désactive les logs inutiles pour accélérer
                 scale: 2, // Améliore la qualité de la capture
-                width: map.getSize().x, // Largeur réelle de la carte
-                height: map.getSize().y // Hauteur réelle de la carte
+                width: document.getElementById('map').offsetWidth, // Largeur réelle de la carte
+                height: document.getElementById('map').offsetHeight // Hauteur réelle de la carte
             }).then(canvas => {
                 const doc = new jsPDF();
 
