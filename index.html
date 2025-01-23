@@ -140,12 +140,12 @@
             // Forcer la taille correcte de la carte avant la capture
             map.invalidateSize();
 
-            // Capturer les dimensions réelles de la carte et ajuster les calques
+            // Capturer la carte avec les dessins
             const mapContainer = document.getElementById('map');
 
             html2canvas(mapContainer, {
-                useCORS: true,
-                allowTaint: true,
+                useCORS: true, // Permet de capturer les tuiles Leaflet
+                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
                 scale: 2, // Améliore la qualité
                 logging: false
             }).then(canvas => {
@@ -158,9 +158,9 @@
                 doc.text(`Adresse : ${address}`, 10, 20);
                 doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
 
-                // Ajouter la capture d'écran au PDF
+                // Ajouter la capture d'écran de la carte au PDF
                 const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 190; // Largeur dans le PDF
+                const imgWidth = 190; // Largeur d'image dans le PDF
                 const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
                 doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
