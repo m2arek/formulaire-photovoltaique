@@ -37,9 +37,9 @@
     </style>
 </head>
 <body>
-    <h1>Tormulaire d'installation d'une centrale photovoltaïque</h1>
+    <h1>Dormulaire d'installation d'une centrale photovoltaïque</h1>
     <form id="solarForm" onsubmit="return searchAddress(event);">
-        <label for="address">FAdresse :</label>
+        <label for="Paddress">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez l'adresse" required>
 
         <label for="consumption">Consommation en kWh :</label>
@@ -147,6 +147,14 @@
             const offsetXPercent = parseFloat(document.getElementById('offsetX').value) || 0;
             const offsetYPercent = parseFloat(document.getElementById('offsetY').value) || 0;
 
+            // Récupérer le niveau de zoom actuel
+            const zoom = map.getZoom();
+            const zoomFactor = 1 / Math.pow(2, 20 - zoom); // Ajustement basé sur le zoom (niveau max = 20)
+
+            // Calculer les décalages ajustés au zoom
+            const adjustedOffsetX = offsetXPercent * zoomFactor;
+            const adjustedOffsetY = offsetYPercent * zoomFactor;
+
             // Forcer la taille correcte de la carte avant la capture
             map.invalidateSize();
 
@@ -155,7 +163,7 @@
             const leafletDrawLayer = mapContainer.querySelector('.leaflet-draw-layer');
 
             if (leafletDrawLayer) {
-                leafletDrawLayer.style.transform = `translate(${offsetXPercent}%, ${offsetYPercent}%)`;
+                leafletDrawLayer.style.transform = `translate(${adjustedOffsetX}%, ${adjustedOffsetY}%)`;
             }
 
             // Capturer la carte et les dessins avec html2canvas
