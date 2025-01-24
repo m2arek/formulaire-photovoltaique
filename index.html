@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>tormulaire Centrale Photovoltaïque</title>
+    <title>Formulaire Centrale Photovoltaïque</title>
     <!-- Liens CSS pour Leaflet et Leaflet.Draw -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
@@ -46,6 +46,12 @@
         <input type="number" id="consumption" name="consumption" placeholder="Entrez la consommation annuelle" required>
 
         <div id="map"></div>
+
+        <label for="offsetX">Décalage horizontal (en %):</label>
+        <input type="number" id="offsetX" name="offsetX" placeholder="Entrez un décalage horizontal" value="20">
+
+        <label for="offsetY">Décalage vertical (en %):</label>
+        <input type="number" id="offsetY" name="offsetY" placeholder="Entrez un décalage vertical" value="20">
 
         <button type="submit">Rechercher l'adresse</button>
         <button type="button" onclick="saveAsPDF()">Exporter en PDF</button>
@@ -137,6 +143,10 @@
         function saveAsPDF() {
             const { jsPDF } = window.jspdf;
 
+            // Récupérer les valeurs de décalage saisies par l'utilisateur
+            const offsetXPercent = parseFloat(document.getElementById('offsetX').value) || 0;
+            const offsetYPercent = parseFloat(document.getElementById('offsetY').value) || 0;
+
             // Forcer la taille correcte de la carte avant la capture
             map.invalidateSize();
 
@@ -145,7 +155,7 @@
             const leafletDrawLayer = mapContainer.querySelector('.leaflet-draw-layer');
 
             if (leafletDrawLayer) {
-                leafletDrawLayer.style.transform = 'translate(20%, 20%)'; // Décalage de 20% à droite et en bas
+                leafletDrawLayer.style.transform = `translate(${offsetXPercent}%, ${offsetYPercent}%)`;
             }
 
             // Capturer la carte et les dessins avec html2canvas
