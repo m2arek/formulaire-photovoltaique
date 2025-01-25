@@ -140,62 +140,64 @@
             }
         }
 
-        function saveAsPDF() {
-            const { jsPDF } = window.jspdf;
+       function saveAsPDF() {
+    const { jsPDF } = window.jspdf;
 
-            // Récupérer les valeurs de décalage saisies par l'utilisateur
-            const offsetXPercent = parseFloat(document.getElementById('offsetX').value) || 0;
-            const offsetYPercent = parseFloat(document.getElementById('offsetY').value) || 0;
+    // Récupérer les valeurs de décalage saisies par l'utilisateur
+    const offsetXPercent = parseFloat(document.getElementById('offsetX').value) || 0;
+    const offsetYPercent = parseFloat(document.getElementById('offsetY').value) || 0;
 
-            // Récupérer le niveau de zoom actuel
-            const zoom = map.getZoom();
-            const zoomFactor = 1 / Math.pow(2, 20 - zoom); // Ajustement basé sur le zoom (niveau max = 20)
+    // Récupérer le niveau de zoom actuel
+    const zoom = map.getZoom();
+    const zoomFactor = 1 / Math.pow(2, 20 - zoom); // Ajustement basé sur le zoom (niveau max = 20)
 
-            // Calculer les décalages ajustés au zoom
-            const adjustedOffsetX = offsetXPercent * zoomFactor;
-            const adjustedOffsetY = offsetYPercent * zoomFactor;
+    // Calculer les décalages ajustés au zoom
+    const adjustedOffsetX = offsetXPercent * zoomFactor;
+    const adjustedOffsetY = offsetYPercent * zoomFactor;
 
-            // Forcer la taille correcte de la carte avant la capture
-            map.invalidateSize();
+    console.log(`Décalage appliqué : X=${adjustedOffsetX}%, Y=${adjustedOffsetY}% (Zoom=${zoom})`);
 
-            // Appliquer un décalage manuel sur les dessins avant la capture
-            const mapContainer = document.getElementById('map');
-            const leafletDrawLayer = mapContainer.querySelector('.leaflet-draw-layer');
+    // Forcer la taille correcte de la carte avant la capture
+    map.invalidateSize();
 
-            if (leafletDrawLayer) {
-                leafletDrawLayer.style.transform = `translate(${adjustedOffsetX}%, ${adjustedOffsetY}%)`;
-            }
+    // Appliquer un décalage manuel sur les dessins avant la capture
+    const mapContainer = document.getElementById('map');
+    const leafletDrawLayer = mapContainer.querySelector('.leaflet-draw-layer');
 
-            // Capturer la carte et les dessins avec html2canvas
-            html2canvas(mapContainer, {
-                useCORS: true, // Permet de capturer les tuiles Leaflet
-                allowTaint: true, // Permet de traiter des éléments provenant de sources externes
-                scale: 2, // Améliore la qualité
-                logging: false,
-            }).then((canvas) => {
-                const doc = new jsPDF();
+    if (leafletDrawLayer) {
+        leafletDrawLayer.style.transform = `translate(${adjustedOffsetX}%, ${adjustedOffsetY}%)`;
+        leafletDrawLayer.style.transition = 'transform 0.1s ease'; // Forcer la mise à jour visuelle
+    }
 
-                const address = document.getElementById('address').value;
-                const consumption = document.getElementById('consumption').value;
+    // Capturer la carte et les dessins avec html2canvas
+    html2canvas(mapContainer, {
+        useCORS: true, // Permet de capturer les tuiles Leaflet
+        allowTaint: true, // Permet de traiter des éléments provenant de sources externes
+        scale: 2, // Améliore la qualité
+        logging: false,
+    }).then((canvas) => {
+        const doc = new jsPDF();
 
-                doc.text("Formulaire d'installation photovoltaïque", 10, 10);
-                doc.text(`Adresse : ${address}`, 10, 20);
-                doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
+        const address = document.getElementById('address').value;
+        const consumption = document.getElementById('consumption').value;
 
-                // Ajouter la capture d'écran de la carte au PDF
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 190; // Largeur d'image dans le PDF
-                const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
-                doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
+        doc.text("Formulaire d'installation photovoltaïque", 10, 10);
+        doc.text(`Adresse : ${address}`, 10, 20);
+        doc.text(`Consommation en kWh : ${consumption}`, 10, 30);
 
-                // Supprimer le décalage des dessins après la capture
-                if (leafletDrawLayer) {
-                    leafletDrawLayer.style.transform = ''; // Réinitialiser le décalage
-                }
+        // Ajouter la capture d'écran de la carte au PDF
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 190; // Largeur d'image dans le PDF
+        const imgHeight = (canvas.height * imgWidth) / canvas.width; // Respecter les proportions
+        doc.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
 
-                doc.save("formulaire_photovoltaique.pdf");
-            });
+        // Supprimer le décalage des dessins après la capture
+        if (leafletDrawLayer) {
+            leafletDrawLayer.style.transform = ''; // Réinitialiser le décalage
+            leafletDrawLayer.style.transition = ''; // Supprimer la transition
         }
-    </script>
-</body>
-</html>
+
+        doc.save("formulaire_photovoltaique.pdf");
+    });
+}
+
