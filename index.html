@@ -32,7 +32,7 @@
             width: 100%;
             height: 100%;
             z-index: 1000;
-            pointer-events: none; /* Permet aux clics de passer à travers le canvas */
+            pointer-events: none; /* Désactivé par défaut */
         }
         form {
             display: flex;
@@ -46,13 +46,14 @@
     </style>
 </head>
 <body>
-    <h1>FFessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
         <button type="submit">Rechercher</button>
     </form>
 
+    <button id="toggleDrawingButton">Activer le dessin</button>
     <div id="map-container">
         <div id="map"></div>
         <canvas id="drawingCanvas"></canvas>
@@ -72,6 +73,17 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
+        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
+
+        let drawing = false;
+        let drawingEnabled = false;
+
+        // Activer/désactiver le mode dessin
+        toggleDrawingButton.addEventListener('click', () => {
+            drawingEnabled = !drawingEnabled;
+            drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
+            toggleDrawingButton.textContent = drawingEnabled ? 'Désactiver le dessin' : 'Activer le dessin';
+        });
 
         // Adapter la taille du canvas à celle du conteneur de la carte
         function resizeCanvas() {
@@ -83,9 +95,8 @@
         window.addEventListener('resize', resizeCanvas);
 
         // Dessin avec la souris
-        let drawing = false;
-
         drawingCanvas.addEventListener('mousedown', (event) => {
+            if (!drawingEnabled) return;
             drawing = true;
             ctx.beginPath();
             const rect = drawingCanvas.getBoundingClientRect();
@@ -95,12 +106,13 @@
         });
 
         drawingCanvas.addEventListener('mouseup', () => {
+            if (!drawingEnabled) return;
             drawing = false;
             ctx.beginPath();
         });
 
         drawingCanvas.addEventListener('mousemove', (event) => {
-            if (!drawing) return;
+            if (!drawing || !drawingEnabled) return;
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.strokeStyle = 'red';
