@@ -32,6 +32,7 @@
             width: 100%;
             height: 100%;
             z-index: 1000;
+            pointer-events: none; /* Permet aux clics de passer à travers le canvas */
         }
         form {
             display: flex;
@@ -45,7 +46,7 @@
     </style>
 </head>
 <body>
-    <h1>RRessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>FFessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -84,11 +85,21 @@
         // Dessin avec la souris
         let drawing = false;
 
-        drawingCanvas.addEventListener('mousedown', () => { drawing = true; });
-        drawingCanvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-        drawingCanvas.addEventListener('mousemove', draw);
+        drawingCanvas.addEventListener('mousedown', (event) => {
+            drawing = true;
+            ctx.beginPath();
+            const rect = drawingCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            ctx.moveTo(x, y);
+        });
 
-        function draw(event) {
+        drawingCanvas.addEventListener('mouseup', () => {
+            drawing = false;
+            ctx.beginPath();
+        });
+
+        drawingCanvas.addEventListener('mousemove', (event) => {
             if (!drawing) return;
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
@@ -100,9 +111,7 @@
 
             ctx.lineTo(x, y);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
+        });
 
         // Fonction pour rechercher une adresse et centrer la carte
         async function searchAddress(event) {
