@@ -9,27 +9,34 @@
     <!-- Scripts JS pour Leaflet et html2canvas -->
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-        #map {
+        #map-container {
+            position: relative;
             width: 100%;
             height: 500px;
             margin-bottom: 20px;
-            position: relative;
         }
-        canvas {
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        #drawingCanvas {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 10;
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
         }
-        form, button {
-            position: relative;
-            z-index: 20;
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         input, button {
             padding: 10px;
@@ -38,15 +45,17 @@
     </style>
 </head>
 <body>
-    <h1>Dedessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
         <button type="submit">Rechercher</button>
     </form>
 
-    <div id="map"></div>
-    <canvas id="drawingCanvas"></canvas>
+    <div id="map-container">
+        <div id="map"></div>
+        <canvas id="drawingCanvas"></canvas>
+    </div>
     <button onclick="saveMapAsPDF()">Exporter en PDF</button>
 
     <script>
@@ -62,11 +71,11 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const mapContainer = document.getElementById('map');
 
+        // Adapter la taille du canvas à celle du conteneur de la carte
         function resizeCanvas() {
-            drawingCanvas.width = mapContainer.offsetWidth;
-            drawingCanvas.height = mapContainer.offsetHeight;
+            drawingCanvas.width = drawingCanvas.offsetWidth;
+            drawingCanvas.height = drawingCanvas.offsetHeight;
         }
         resizeCanvas();
 
@@ -118,25 +127,18 @@
 
         // Fonction pour exporter la carte et le dessin en PDF
         function saveMapAsPDF() {
+            const mapContainer = document.getElementById('map-container');
             html2canvas(mapContainer, {
-                useCORS: true
-            }).then(mapCanvas => {
-                const mapImage = mapCanvas.toDataURL('image/png');
+                useCORS: true,
+                scale: 2 // Améliore la qualité
+            }).then(canvas => {
+                const mapImage = canvas.toDataURL('image/png');
 
-                html2canvas(drawingCanvas).then(drawingCanvas => {
-                    const drawingImage = drawingCanvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
 
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF();
-
-                    // Ajouter l'image de la carte
-                    pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
-
-                    // Ajouter l'image du dessin superposé
-                    pdf.addImage(drawingImage, 'PNG', 10, 10, 190, 100);
-
-                    pdf.save('carte_dessin.pdf');
-                });
+                pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
+                pdf.save('carte_dessin.pdf');
             });
         }
     </script>
