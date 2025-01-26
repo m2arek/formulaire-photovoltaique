@@ -32,7 +32,6 @@
             width: 100%;
             height: 100%;
             z-index: 1000;
-            pointer-events: none; /* Désactivé par défaut */
         }
         form {
             display: flex;
@@ -55,7 +54,7 @@
     </style>
 </head>
 <body>
-    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>De sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -189,6 +188,8 @@
         // Fonction pour exporter la carte, le dessin et le formulaire en PDF
         function saveMapAsPDF() {
             const mapContainer = document.getElementById('map-container');
+            const userForm = document.getElementById('userForm');
+
             html2canvas(mapContainer, {
                 useCORS: true,
                 scale: 2 // Améliore la qualité
@@ -200,36 +201,16 @@
 
                 pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
 
-                // Ajouter les informations du formulaire
-                const savedAddress = document.getElementById('savedAddress').value;
-                const companyName = document.getElementById('companyName').value;
-                const activity = document.getElementById('activity').value;
-                const roofArea = document.getElementById('roofArea').value;
-                const roofType = document.getElementById('roofType').value;
-                const roofStructure = document.getElementById('roofStructure').value;
-                const translucentParts = document.getElementById('translucentParts').value;
-                const electricityUse = document.getElementById('electricityUse').value;
-                const comments = document.getElementById('comments').value;
-
                 let yOffset = 120;
-                pdf.text(`Adresse entrée : ${savedAddress}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Société : ${companyName}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Activité : ${activity}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Surface toiture : ${roofArea} m²`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Type de couverture : ${roofType}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Type de charpente : ${roofStructure}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Parties translucides : ${translucentParts}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Utilisation électrique : ${electricityUse}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Commentaires : ${comments}`, 10, yOffset);
+                const formData = new FormData(userForm);
+                formData.forEach((value, key) => {
+                    if (value) {
+                        pdf.text(`${key} : ${value}`, 10, yOffset);
+                        yOffset += 10;
+                    }
+                });
 
+                const companyName = document.getElementById('companyName').value;
                 const pdfFileName = companyName ? `${companyName}.pdf` : 'carte_et_formulaire.pdf';
                 pdf.save(pdfFileName);
             });
