@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <h1>15 sur la carte et sauvegardez en PDF</h1>
+    <h1>16 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -112,10 +112,19 @@
 
 
             <label for="roofStructure">Type de charpente :</label>
-            <input type="text" id="roofStructure" name="roofStructure" placeholder="Entrez le type de charpente">
+<select id="roofStructure" name="roofStructure">
+    <option value="" disabled selected>Choisissez un type de charpente</option>
+    <option value="Metallique">Métallique</option>
+    <option value="Bois">Bois</option>
+</select>
 
-            <label for="translucentParts">Parties translucides :</label>
-            <input type="text" id="translucentParts" name="translucentParts" placeholder="Entrez les parties translucides">
+
+             <label for="Translucides">Type de charpente :</label>
+<select id="Translucides" name="Translucides">
+    <option value="" disabled selected>Presence de translucides o/n</option>
+    <option value="Oui">Oui</option>
+    <option value="Nons">Non</option>
+</select>
         </div>
 
         <div class="form-section">
