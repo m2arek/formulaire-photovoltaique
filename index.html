@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte avec Dessin</title>
+    <title>Carte avec Dessin et Formulaire</title>
     <!-- Liens CSS pour Leaflet -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Scripts JS pour Leaflet et html2canvas -->
@@ -37,27 +37,77 @@
         form {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
-        input, button {
+        input, button, textarea {
             padding: 10px;
             font-size: 16px;
+        }
+        .form-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .form-section h3 {
+            margin-top: 0;
         }
     </style>
 </head>
 <body>
-    <h1>Qessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
         <button type="submit">Rechercher</button>
     </form>
 
-    <button id="toggleDrawingButton">Activer le dessin</button>
     <div id="map-container">
         <div id="map"></div>
         <canvas id="drawingCanvas"></canvas>
     </div>
+
+    <form id="userForm">
+        <div class="form-section">
+            <h3>Informations sur la société</h3>
+            <label for="savedAddress">Adresse entrée :</label>
+            <input type="text" id="savedAddress" name="savedAddress" readonly>
+
+            <label for="companyName">Société :</label>
+            <input type="text" id="companyName" name="companyName" placeholder="Entrez le nom de la société">
+
+            <label for="activity">Activité :</label>
+            <input type="text" id="activity" name="activity" placeholder="Entrez l'activité">
+        </div>
+
+        <div class="form-section">
+            <h3>Informations sur la toiture</h3>
+            <label for="roofArea">Surface toiture (m²) :</label>
+            <input type="number" id="roofArea" name="roofArea" placeholder="Entrez la surface de la toiture">
+
+            <label for="roofType">Type de couverture :</label>
+            <input type="text" id="roofType" name="roofType" placeholder="Entrez le type de couverture">
+
+            <label for="roofStructure">Type de charpente :</label>
+            <input type="text" id="roofStructure" name="roofStructure" placeholder="Entrez le type de charpente">
+
+            <label for="translucentParts">Parties translucides :</label>
+            <input type="text" id="translucentParts" name="translucentParts" placeholder="Entrez les parties translucides">
+        </div>
+
+        <div class="form-section">
+            <h3>Consommation électrique générale</h3>
+            <label for="electricityUse">Utilisation électrique :</label>
+            <input type="text" id="electricityUse" name="electricityUse" placeholder="Entrez l'utilisation électrique">
+        </div>
+
+        <div class="form-section">
+            <h3>Commentaires</h3>
+            <label for="comments">Commentaires :</label>
+            <textarea id="comments" name="comments" placeholder="Entrez vos commentaires"></textarea>
+        </div>
+    </form>
+
     <button onclick="saveMapAsPDF()">Exporter en PDF</button>
 
     <script>
@@ -73,17 +123,9 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
+        const savedAddressField = document.getElementById('savedAddress');
 
         let drawing = false;
-        let drawingEnabled = false;
-
-        // Activer/désactiver le mode dessin
-        toggleDrawingButton.addEventListener('click', () => {
-            drawingEnabled = !drawingEnabled;
-            drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
-            toggleDrawingButton.textContent = drawingEnabled ? 'Désactiver le dessin' : 'Activer le dessin';
-        });
 
         // Adapter la taille du canvas à celle du conteneur de la carte
         function resizeCanvas() {
@@ -94,9 +136,7 @@
 
         window.addEventListener('resize', resizeCanvas);
 
-        // Dessin avec la souris
         drawingCanvas.addEventListener('mousedown', (event) => {
-            if (!drawingEnabled) return;
             drawing = true;
             ctx.beginPath();
             const rect = drawingCanvas.getBoundingClientRect();
@@ -106,13 +146,12 @@
         });
 
         drawingCanvas.addEventListener('mouseup', () => {
-            if (!drawingEnabled) return;
             drawing = false;
             ctx.beginPath();
         });
 
         drawingCanvas.addEventListener('mousemove', (event) => {
-            if (!drawing || !drawingEnabled) return;
+            if (!drawing) return;
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.strokeStyle = 'red';
@@ -137,16 +176,17 @@
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     map.setView([lat, lon], 18);
+                    savedAddressField.value = address; // Sauvegarder l'adresse dans le formulaire
                 } else {
                     alert('Adresse introuvable.');
                 }
             } catch (error) {
-                console.error('Erreur lors de la recherche de l\'adresse :', error);
-                alert('Une erreur est survenue lors de la recherche de l\'adresse.');
+                console.error('Erreur lors de la recherche de l'adresse :', error);
+                alert('Une erreur est survenue lors de la recherche de l'adresse.');
             }
         }
 
-        // Fonction pour exporter la carte et le dessin en PDF
+        // Fonction pour exporter la carte, le dessin et le formulaire en PDF
         function saveMapAsPDF() {
             const mapContainer = document.getElementById('map-container');
             html2canvas(mapContainer, {
@@ -159,7 +199,39 @@
                 const pdf = new jsPDF();
 
                 pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
-                pdf.save('carte_dessin.pdf');
+
+                // Ajouter les informations du formulaire
+                const savedAddress = document.getElementById('savedAddress').value;
+                const companyName = document.getElementById('companyName').value;
+                const activity = document.getElementById('activity').value;
+                const roofArea = document.getElementById('roofArea').value;
+                const roofType = document.getElementById('roofType').value;
+                const roofStructure = document.getElementById('roofStructure').value;
+                const translucentParts = document.getElementById('translucentParts').value;
+                const electricityUse = document.getElementById('electricityUse').value;
+                const comments = document.getElementById('comments').value;
+
+                let yOffset = 120;
+                pdf.text(`Adresse entrée : ${savedAddress}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Société : ${companyName}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Activité : ${activity}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Surface toiture : ${roofArea} m²`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Type de couverture : ${roofType}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Type de charpente : ${roofStructure}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Parties translucides : ${translucentParts}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Utilisation électrique : ${electricityUse}`, 10, yOffset);
+                yOffset += 10;
+                pdf.text(`Commentaires : ${comments}`, 10, yOffset);
+
+                const pdfFileName = companyName ? `${companyName}.pdf` : 'carte_et_formulaire.pdf';
+                pdf.save(pdfFileName);
             });
         }
     </script>
