@@ -68,7 +68,7 @@
     </style>
 </head>
 <body>
-    <h1>17 sur la carte et sauvegardez en PDF</h1>
+    <h1>20 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -120,12 +120,22 @@
 </select>
 
 
-             <label for="Translucides">Type de charpente :</label>
+             <label for="Translucides">Presence de translucides :</label>
 <select id="Translucides" name="Translucides">
     <option value="" disabled selected>Presence de translucides o/n</option>
     <option value="Oui">Oui</option>
-    <option value="Nons">Non</option>
+    <option value="Non">Non</option>
 </select>
+
+            <label for="Couvrir Translucides">Type de charpente :</label>
+<select id="Couvrir Translucides" name="Couvrir Translucides">
+    <option value="" disabled selected>Couvrir Translucides o/n</option>
+    <option value="Oui">Oui</option>
+    <option value="Non">Non</option>
+</select>
+
+
+            
         </div>
 
         <div class="form-section">
