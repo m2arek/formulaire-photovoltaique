@@ -66,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>8 sur la carte et sauvegardez en PDF</h1>
+    <h1>9 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -122,34 +122,25 @@
 
     <button onclick="saveMapAsPDF()">Exporter en PDF</button>
 
-    <script>
+   <script>
         // Initialiser la carte
-const map = L.map('map', {
-    zoomControl: true, // Active les contrôles de zoom
-    scrollWheelZoom: true // Permet de zoomer avec la molette
-}).setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
-
-const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    minZoom: 1, // Zoom minimal
-    maxZoom: 20, // Zoom maximal
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], // Sous-domaines Google
-    attribution: '© Google'
-});
-tileLayer.addTo(map); // Ajoute la couche à la carte
-
-
-
+        const map = L.map('map').setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
+        const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google'
+        });
+        tileLayer.addTo(map);
 
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const savedAddressField = document.getElementById('savedAddress');
+        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
 
         let drawing = false;
         let drawingEnabled = false;
 
         // Activer/désactiver le mode dessin
-        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
         toggleDrawingButton.addEventListener('click', () => {
             drawingEnabled = !drawingEnabled;
             drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
@@ -208,7 +199,6 @@ tileLayer.addTo(map); // Ajoute la couche à la carte
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     map.setView([lat, lon], 18);
-                    savedAddressField.value = address; // Sauvegarder l'adresse dans le formulaire
                 } else {
                     alert('Adresse introuvable.');
                 }
@@ -218,11 +208,9 @@ tileLayer.addTo(map); // Ajoute la couche à la carte
             }
         }
 
-        // Fonction pour exporter la carte, le dessin et le formulaire en PDF
+        // Fonction pour exporter la carte et le dessin en PDF
         function saveMapAsPDF() {
             const mapContainer = document.getElementById('map-container');
-            const userForm = document.getElementById('userForm');
-
             html2canvas(mapContainer, {
                 useCORS: true,
                 scale: 2 // Améliore la qualité
@@ -233,19 +221,7 @@ tileLayer.addTo(map); // Ajoute la couche à la carte
                 const pdf = new jsPDF();
 
                 pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
-
-                let yOffset = 120;
-                const formData = new FormData(userForm);
-                formData.forEach((value, key) => {
-                    if (value) {
-                        pdf.text(`${key} : ${value}`, 10, yOffset);
-                        yOffset += 10;
-                    }
-                });
-
-                const companyName = document.getElementById('companyName').value;
-                const pdfFileName = companyName ? `Formulaire_${companyName}.pdf` : 'Formulaire.pdf';
-                pdf.save(pdfFileName);
+                pdf.save('carte_dessin.pdf');
             });
         }
     </script>
