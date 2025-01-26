@@ -66,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>6 sur la carte et sauvegardez en PDF</h1>
+    <h1>7 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -124,16 +124,24 @@
 
     <script>
         // Initialiser la carte
-        const map = L.map('map').setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
-        const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    minZoom: 1, // Niveau de zoom minimum
-    maxZoom: 20, // Niveau de zoom maximum
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], // Sous-domaines pour équilibrer les requêtes
+const map = L.map('map', {
+    zoomControl: true, // Active les contrôles de zoom
+    scrollWheelZoom: true // Permet de zoomer avec la molette
+}).setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
+
+const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    minZoom: 1, // Zoom minimal
+    maxZoom: 20, // Zoom maximal
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], // Sous-domaines Google
     attribution: '© Google'
 });
+tileLayer.addTo(map); // Ajoute la couche à la carte
 
+// Ajoute les contrôles de zoom (si besoin de les réinitialiser)
+L.control.zoom({
+    position: 'topleft' // Positionne les contrôles de zoom
+}).addTo(map);
 
-        tileLayer.addTo(map);
 
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
