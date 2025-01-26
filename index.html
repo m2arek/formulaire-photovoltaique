@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <h1>14 sur la carte et sauvegardez en PDF</h1>
+    <h1>15 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -102,7 +102,14 @@
             <input type="number" id="roofArea" name="roofArea" placeholder="Entrez la surface de la toiture">
 
             <label for="roofType">Type de couverture :</label>
-            <input type="text" id="roofType" name="roofType" placeholder="Entrez le type de couverture">
+<select id="roofType" name="roofType">
+    <option value="" disabled selected>Choisissez un type de couverture</option>
+    <option value="Bacs acier">Bacs acier</option>
+    <option value="Fibro ciment">Fibro ciment</option>
+    <option value="Tuiles">Tuiles</option>
+    <option value="Béton">Béton</option>
+</select>
+
 
             <label for="roofStructure">Type de charpente :</label>
             <input type="text" id="roofStructure" name="roofStructure" placeholder="Entrez le type de charpente">
