@@ -32,7 +32,6 @@
             width: 100%;
             height: 100%;
             z-index: 1000;
-            pointer-events: none; /* Désactivé par défaut */
         }
         form {
             display: flex;
@@ -67,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>nez sur la carte et sauvegardez en PDF</h1>
+    <h1>Des sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -136,12 +135,13 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
+        const savedAddressField = document.getElementById('savedAddress');
 
         let drawing = false;
         let drawingEnabled = false;
 
         // Activer/désactiver le mode dessin
+        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
         toggleDrawingButton.addEventListener('click', () => {
             drawingEnabled = !drawingEnabled;
             drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
@@ -200,6 +200,7 @@
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     map.setView([lat, lon], 18);
+                    savedAddressField.value = address; // Sauvegarder l'adresse dans le formulaire
                 } else {
                     alert('Adresse introuvable.');
                 }
@@ -212,6 +213,8 @@
         // Fonction pour exporter la carte, le dessin et le formulaire en PDF
         function saveMapAsPDF() {
             const mapContainer = document.getElementById('map-container');
+            const userForm = document.getElementById('userForm');
+
             html2canvas(mapContainer, {
                 useCORS: true,
                 scale: 2 // Améliore la qualité
@@ -222,7 +225,19 @@
                 const pdf = new jsPDF();
 
                 pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
-                pdf.save('carte_dessin.pdf');
+
+                let yOffset = 120;
+                const formData = new FormData(userForm);
+                formData.forEach((value, key) => {
+                    if (value) {
+                        pdf.text(`${key} : ${value}`, 10, yOffset);
+                        yOffset += 10;
+                    }
+                });
+
+                const companyName = document.getElementById('companyName').value;
+                const pdfFileName = companyName ? `Formulaire_${companyName}.pdf` : 'Formulaire.pdf';
+                pdf.save(pdfFileName);
             });
         }
     </script>
