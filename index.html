@@ -66,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>5 sur la carte et sauvegardez en PDF</h1>
+    <h1>6 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -126,10 +126,12 @@
         // Initialiser la carte
         const map = L.map('map').setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
         const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    minZoom: 1, // Niveau de zoom minimum
+    maxZoom: 20, // Niveau de zoom maximum
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], // Sous-domaines pour équilibrer les requêtes
     attribution: '© Google'
 });
+
 
         tileLayer.addTo(map);
 
