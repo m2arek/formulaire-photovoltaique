@@ -68,7 +68,7 @@
     </style>
 </head>
 <body>
-    <h1>21 sur la carte et sauvegardez en PDF</h1>
+    <h1>22 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -96,7 +96,7 @@
             <label for="Nom">Nom :</label>
             <input type="text" id="Nom" name="Nom" placeholder="Entrez le nom">
 
-             <label for="Prénom">Nom :</label>
+             <label for="Prénom">Prénom :</label>
             <input type="text" id="Prénom" name="Prénom" placeholder="Entrez le prénom">
 
 
@@ -109,6 +109,20 @@
             <h3>Informations sur la toiture</h3>
             <label for="Surface toiture">Surface toiture (m²) :</label>
             <input type="number" id="Surface toiture" name="Surface toiture" placeholder="Entrez la surface de la toiture">
+
+
+             <label for="Type de toiture">Type de toiture :</label>
+<select id="Type de toiture" name="Type de toiture">
+    <option value="" disabled selected>Choisissez un Type de toiture</option>
+    <option value="2 pentes">2 pentes</option>
+    <option value="1 pente">1 pente</option>
+    <option value="Toit plat">Toit plat</option>
+    </select>
+
+            <label for="Pente toiture">Pente toiture (°) :</label>
+            <input type="number" id="Pente toiture" name="Pente toiture" placeholder="Pente de la toiture">
+
+
 
             <label for="Type de couverture">Type de couverture :</label>
 <select id="Type de couverture" name="Type de couverture">
