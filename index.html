@@ -68,7 +68,7 @@
     </style>
 </head>
 <body>
-    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -238,7 +238,7 @@
                 });
 
                 const companyName = document.getElementById('companyName').value;
-                const pdfFileName = companyName ? `${companyName}.pdf` : 'carte_et_formulaire.pdf';
+                const pdfFileName = companyName ? `Formulaire_${companyName}.pdf` : 'Formulaire.pdf';
                 pdf.save(pdfFileName);
             });
         }
