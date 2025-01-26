@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <h1>12 sur la carte et sauvegardez en PDF</h1>
+    <h1>13 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -83,8 +83,8 @@
     <form id="userForm">
         <div class="form-section">
             <h3>Informations sur la société</h3>
-            <label for="savedAddress">Adresse entrée :</label>
-            <input type="text" id="savedAddress" name="savedAddress" readonly>
+            <label for="Adresse">Adresse entrée :</label>
+            <input type="text" id="Adresse" name="Adresse" readonly>
 
             <label for="companyName">Société :</label>
             <input type="text" id="companyName" name="companyName" placeholder="Entrez le nom de la société">
@@ -136,7 +136,7 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const savedAddressField = document.getElementById('savedAddress');
+        const AdresseField = document.getElementById('Adresse');
 
         let drawing = false;
         let drawingEnabled = false;
@@ -201,7 +201,7 @@
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     map.setView([lat, lon], 18);
-                    savedAddressField.value = address; // Sauvegarder l'adresse dans le formulaire
+                    AdresseField.value = address; // Sauvegarder l'adresse dans le formulaire
                 } else {
                     alert('Adresse introuvable.');
                 }
