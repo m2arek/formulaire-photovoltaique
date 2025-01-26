@@ -52,15 +52,30 @@
         .form-section h3 {
             margin-top: 0;
         }
+        #toggleDrawingButton {
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #toggleDrawingButton:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <h1>ouvrez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
         <button type="submit">Rechercher</button>
     </form>
+
+    <button id="toggleDrawingButton" onclick="toggleDrawingMode()">Activer le dessin</button>
 
     <div id="map-container">
         <div id="map"></div>
@@ -126,6 +141,15 @@
         const savedAddressField = document.getElementById('savedAddress');
 
         let drawing = false;
+        let drawingEnabled = false;
+
+        // Activer/Désactiver le mode dessin
+        function toggleDrawingMode() {
+            drawingEnabled = !drawingEnabled;
+            drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
+            const button = document.getElementById('toggleDrawingButton');
+            button.textContent = drawingEnabled ? 'Désactiver le dessin' : 'Activer le dessin';
+        }
 
         // Adapter la taille du canvas à celle du conteneur de la carte
         function resizeCanvas() {
@@ -137,6 +161,7 @@
         window.addEventListener('resize', resizeCanvas);
 
         drawingCanvas.addEventListener('mousedown', (event) => {
+            if (!drawingEnabled) return;
             drawing = true;
             ctx.beginPath();
             const rect = drawingCanvas.getBoundingClientRect();
@@ -146,12 +171,13 @@
         });
 
         drawingCanvas.addEventListener('mouseup', () => {
+            if (!drawingEnabled) return;
             drawing = false;
             ctx.beginPath();
         });
 
         drawingCanvas.addEventListener('mousemove', (event) => {
-            if (!drawing) return;
+            if (!drawing || !drawingEnabled) return;
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.strokeStyle = 'red';
@@ -181,8 +207,8 @@
                     alert('Adresse introuvable.');
                 }
             } catch (error) {
-                console.error('Erreur lors de la recherche de l\'adresse :', error);
-                alert('Une erreur est survenue lors de la recherche de l\'adresse.');
+                console.error('Erreur lors de la recherche de l'adresse :', error);
+                alert('Une erreur est survenue lors de la recherche de l'adresse.');
             }
         }
 
