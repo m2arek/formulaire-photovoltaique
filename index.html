@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte avec Dessin et Formulaire</title>
+    <title>Carte avec Dessin</title>
     <!-- Liens CSS pour Leaflet -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Scripts JS pour Leaflet et html2canvas -->
@@ -46,41 +46,19 @@
     </style>
 </head>
 <body>
-    <h1>Fessinez sur la carte et sauvegardez en PDF</h1>
+    <h1>Dessinez sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
         <button type="submit">Rechercher</button>
     </form>
 
+    <button id="toggleDrawingButton">Activer le dessin</button>
     <div id="map-container">
         <div id="map"></div>
         <canvas id="drawingCanvas"></canvas>
     </div>
     <button onclick="saveMapAsPDF()">Exporter en PDF</button>
-
-    <form id="userForm">
-        <h2>Formulaire utilisateur</h2>
-        <label for="savedAddress">Adresse entrée :</label>
-        <input type="text" id="savedAddress" name="savedAddress" readonly>
-
-        <label for="userName">Nom :</label>
-        <input type="text" id="userName" name="userName" placeholder="Entrez votre nom">
-
-        <label for="userEmail">Email :</label>
-        <input type="email" id="userEmail" name="userEmail" placeholder="Entrez votre email">
-
-        <label for="userFeedback">Commentaires :</label>
-        <textarea id="userFeedback" name="userFeedback" placeholder="Laissez vos commentaires"></textarea>
-
-        <label>Quels équipements utilisez-vous :</label>
-        <input type="checkbox" id="solarPanels" name="equipments" value="Panneaux solaires">
-        <label for="solarPanels">Panneaux solaires</label>
-        <input type="checkbox" id="battery" name="equipments" value="Batteries">
-        <label for="battery">Batteries</label>
-        <input type="checkbox" id="inverter" name="equipments" value="Onduleur">
-        <label for="inverter">Onduleur</label>
-    </form>
 
     <script>
         // Initialiser la carte
@@ -95,9 +73,17 @@
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
         const ctx = drawingCanvas.getContext('2d');
-        const savedAddressField = document.getElementById('savedAddress');
+        const toggleDrawingButton = document.getElementById('toggleDrawingButton');
 
         let drawing = false;
+        let drawingEnabled = false;
+
+        // Activer/désactiver le mode dessin
+        toggleDrawingButton.addEventListener('click', () => {
+            drawingEnabled = !drawingEnabled;
+            drawingCanvas.style.pointerEvents = drawingEnabled ? 'auto' : 'none';
+            toggleDrawingButton.textContent = drawingEnabled ? 'Désactiver le dessin' : 'Activer le dessin';
+        });
 
         // Adapter la taille du canvas à celle du conteneur de la carte
         function resizeCanvas() {
@@ -108,7 +94,9 @@
 
         window.addEventListener('resize', resizeCanvas);
 
+        // Dessin avec la souris
         drawingCanvas.addEventListener('mousedown', (event) => {
+            if (!drawingEnabled) return;
             drawing = true;
             ctx.beginPath();
             const rect = drawingCanvas.getBoundingClientRect();
@@ -118,12 +106,13 @@
         });
 
         drawingCanvas.addEventListener('mouseup', () => {
+            if (!drawingEnabled) return;
             drawing = false;
             ctx.beginPath();
         });
 
         drawingCanvas.addEventListener('mousemove', (event) => {
-            if (!drawing) return;
+            if (!drawing || !drawingEnabled) return;
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.strokeStyle = 'red';
@@ -148,17 +137,16 @@
                 if (data.length > 0) {
                     const { lat, lon } = data[0];
                     map.setView([lat, lon], 18);
-                    savedAddressField.value = address; // Sauvegarder l'adresse dans le formulaire
                 } else {
                     alert('Adresse introuvable.');
                 }
             } catch (error) {
-                console.error('Erreur lors de la recherche de l'adresse :', error);
-                alert('Une erreur est survenue lors de la recherche de l'adresse.');
+                console.error('Erreur lors de la recherche de l\'adresse :', error);
+                alert('Une erreur est survenue lors de la recherche de l\'adresse.');
             }
         }
 
-        // Fonction pour exporter la carte, le dessin et le formulaire en PDF
+        // Fonction pour exporter la carte et le dessin en PDF
         function saveMapAsPDF() {
             const mapContainer = document.getElementById('map-container');
             html2canvas(mapContainer, {
@@ -171,23 +159,7 @@
                 const pdf = new jsPDF();
 
                 pdf.addImage(mapImage, 'PNG', 10, 10, 190, 100);
-
-                // Ajouter les informations du formulaire
-                const savedAddress = document.getElementById('savedAddress').value;
-                const userName = document.getElementById('userName').value;
-                const userEmail = document.getElementById('userEmail').value;
-                const userFeedback = document.getElementById('userFeedback').value;
-
-                let yOffset = 120;
-                pdf.text(`Adresse entrée : ${savedAddress}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Nom : ${userName}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Email : ${userEmail}`, 10, yOffset);
-                yOffset += 10;
-                pdf.text(`Commentaires : ${userFeedback}`, 10, yOffset);
-
-                pdf.save('carte_et_formulaire.pdf');
+                pdf.save('carte_dessin.pdf');
             });
         }
     </script>
