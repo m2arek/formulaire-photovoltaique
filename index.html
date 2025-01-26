@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <h1>17 sur la carte et sauvegardez en PDF</h1>
+    <h1>18 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -86,14 +86,14 @@
             <label for="Adresse">Adresse entrée :</label>
             <input type="text" id="Adresse" name="Adresse" readonly>
 
-            <label for="companyName">Société :</label>
-            <input type="text" id="companyName" name="companyName" placeholder="Entrez le nom de la société">
+            <label for="Nom entreprise">Société :</label>
+            <input type="text" id="Nom entreprise" name="Nom entreprise" placeholder="Entrez le nom de la société">
 
-            <label for="activity">Activité :</label>
-            <input type="text" id="activity" name="activity" placeholder="Entrez l'activité">
+            <label for="activité">Activité :</label>
+            <input type="text" id="activité" name="activité" placeholder="Entrez l'activité">
 
             <label for="Statut">Statut :</label>
-            <input type="text" id="activity" name="Statut" placeholder="Statut dans ste">
+            <input type="text" id="Statut" name="Statut" placeholder="Statut dans ste">
         </div>
 
         <div class="form-section">
@@ -125,6 +125,14 @@
     <option value="Oui">Oui</option>
     <option value="Nons">Non</option>
 </select>
+
+            <label for="Couvrir translucides">Type de charpente :</label>
+<select id="Couvrir translucides" name="Couvrir translucides">
+    <option value="" disabled selected>Couvrir translucides o/n</option>
+    <option value="Oui">Oui</option>
+    <option value="Nons">Non</option>
+</select>
+            
         </div>
 
         <div class="form-section">
@@ -255,8 +263,8 @@
                     }
                 });
 
-                const companyName = document.getElementById('companyName').value;
-                const pdfFileName = companyName ? `Formulaire_${companyName}.pdf` : 'Formulaire.pdf';
+                const Nom entreprise = document.getElementById('Nom entreprise').value;
+                const pdfFileName = Nom entreprise ? `Formulaire_${Nom entreprise}.pdf` : 'Formulaire.pdf';
                 pdf.save(pdfFileName);
             });
         }
