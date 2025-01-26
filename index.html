@@ -66,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>Desz sur la carte et sauvegardez en PDF</h1>
+    <h1>5 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -123,14 +123,15 @@
     <button onclick="saveMapAsPDF()">Exporter en PDF</button>
 
     <script>
-        // Initialiser la carte avec la vue satellite
+        // Initialiser la carte
         const map = L.map('map').setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
-        const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '© Google'
-        });
-        satelliteLayer.addTo(map);
+        const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '© Google'
+});
+
+        tileLayer.addTo(map);
 
         // Ajouter le canvas pour dessiner
         const drawingCanvas = document.getElementById('drawingCanvas');
@@ -205,8 +206,8 @@
                     alert('Adresse introuvable.');
                 }
             } catch (error) {
-                console.error('Erreur lors de la recherche de l'adresse :', error);
-                alert('Une erreur est survenue lors de la recherche de l'adresse.');
+                console.error('Erreur lors de la recherche de l\'adresse :', error);
+                alert('Une erreur est survenue lors de la recherche de l\'adresse.');
             }
         }
 
