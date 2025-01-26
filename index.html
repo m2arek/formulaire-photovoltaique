@@ -66,7 +66,7 @@
     </style>
 </head>
 <body>
-    <h1>7 sur la carte et sauvegardez en PDF</h1>
+    <h1>8 sur la carte et sauvegardez en PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -137,10 +137,7 @@ const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z
 });
 tileLayer.addTo(map); // Ajoute la couche à la carte
 
-// Ajoute les contrôles de zoom (si besoin de les réinitialiser)
-L.control.zoom({
-    position: 'topleft' // Positionne les contrôles de zoom
-}).addTo(map);
+
 
 
         // Ajouter le canvas pour dessiner
