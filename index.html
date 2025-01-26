@@ -68,7 +68,7 @@
     </style>
 </head>
 <body>
-    <h1>Dessinez sur la carte et en PDF</h1>
+    <h1> PDF</h1>
     <form id="addressForm" onsubmit="return searchAddress(event);">
         <label for="address">Adresse :</label>
         <input type="text" id="address" name="address" placeholder="Entrez une adresse" required>
@@ -128,10 +128,9 @@
     <script>
         // Initialiser la carte
         const map = L.map('map').setView([48.8566, 2.3522], 18); // Coordonnées par défaut (Paris)
-        const tileLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '© Google'
+            attribution: '© OpenStreetMap'
         });
         tileLayer.addTo(map);
 
