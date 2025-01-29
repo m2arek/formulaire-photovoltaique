@@ -238,7 +238,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title"> le Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -604,6 +604,14 @@
       <input type="file" id="loadFromFile" style="display: none;" />
       <button id="uploadFile">Charger un fichier</button>
     </div>
+
+    <!-- BLOC DE DEBUG POUR AFFICHER LA RÉPONSE PVGIS -->
+    <div id="debugSection" style="margin-top:15px; border:1px solid #ccc; padding:10px;">
+      <h4>Réponse brute de l'API PVGIS (debug) :</h4>
+      <pre id="debugOutput" style="white-space: pre-wrap; max-height:300px; overflow:auto;">
+        (Les données apparaîtront après le clic sur "Calculer le productible")
+      </pre>
+    </div>
   </div>
 
   <script>
@@ -846,7 +854,7 @@
     async function fetchMonthlyProduction(lat, lon, aspectValue) {
       /*
         On récupère la production mensuelle ET la production annuelle
-        dans le même JSON. => outputs.monthly.fixed & outputs.totals.fixed
+        dans le même JSON => outputs.monthly.fixed & outputs.totals.fixed
       */
       const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json&lat=${lat}&lon=${lon}&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(url)}`;
@@ -854,6 +862,10 @@
         const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error("Réponse réseau incorrecte");
         const data = await res.json();
+
+        // === DEBUG ===
+        console.log("Réponse JSON PVGIS:", data);
+        document.getElementById("debugOutput").textContent = JSON.stringify(data, null, 2);
 
         // 1) Récupère production mensuelle
         const monthlyData = data.outputs.monthly.fixed || [];
@@ -902,6 +914,8 @@
         return true; // succès
       } catch (e) {
         console.error(e);
+        document.getElementById("debugOutput").textContent =
+          "Erreur lors de l'appel JSON PVGIS:\n" + e;
         return false; // échec
       }
     }
