@@ -204,39 +204,26 @@
     }
 
     /* ------------------------------
-       Tableau de consommation
+       Tableaux
     -------------------------------- */
-    #consumptionTable {
+    table {
       border: 1px solid #ddd;
       border-collapse: collapse;
       width: 100%;
       text-align: center;
     }
-    #consumptionTable th, #consumptionTable td {
+    table th, table td {
       padding: 8px;
       font-size: 14px;
       border: 1px solid #ddd;
     }
-    #consumptionTable thead {
+    table thead {
       background-color: #f0f0f0;
     }
 
-    /* ------------------------------
-       Tableau de production mensuelle
-    -------------------------------- */
-    #monthlyProductionTable {
-      border: 1px solid #ddd;
-      border-collapse: collapse;
-      width: 100%;
-      text-align: center;
-    }
-    #monthlyProductionTable th, #monthlyProductionTable td {
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ddd;
-    }
-    #monthlyProductionTable thead {
-      background-color: #f0f0f0;
+    /* Indique si besoin un style dédié pour d'autres tableaux. */
+    #consumptionTable {
+      margin-top: 15px;
     }
 
     /* ------------------------------
@@ -256,7 +243,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -593,14 +580,80 @@
             }
             const averageCostPerKwh = totalKwh > 0 ? (totalEuros / totalKwh).toFixed(2) : "-";
 
-            document.getElementById("totalEuros").textContent = 
+            document.getElementById("totalEuros").textContent =
               totalEuros.toFixed(2).toLocaleString('fr-FR') + " €";
-            document.getElementById("totalKwh").textContent = 
+            document.getElementById("totalKwh").textContent =
               totalKwh.toFixed(2).toLocaleString('fr-FR') + " kWh";
             document.getElementById("totalCostPerKwh").textContent =
               totalKwh > 0 ? `${averageCostPerKwh} €` : "-";
           }
         </script>
+      </div>
+
+      <!-- (NOUVEAU) BLOC "Préconisation" -->
+      <div class="form-section">
+        <h3>Préconisation</h3>
+
+        <!-- Variables modifiables -->
+        <label for="annualPriceIncrease">Augmentation annuelle du prix de l'électricité (%):</label>
+        <input
+          type="number"
+          step="0.1"
+          id="annualPriceIncrease"
+          name="annualPriceIncrease"
+          value="5"
+          placeholder="Ex: 5"
+        />
+
+        <label for="tarifRachat">Tarif de rachat du surplus (€/kWh) :</label>
+        <input
+          type="number"
+          step="0.0001"
+          id="tarifRachat"
+          name="tarifRachat"
+          value="0.0761"
+        />
+
+        <!-- Bouton déclenchant le calcul sur 20 ans -->
+        <button type="button" id="calculatePreconisation" onclick="calculatePreconisation()">
+          Calculer la préconisation
+        </button>
+
+        <!-- Tableau sur 20 ans -->
+        <table id="preconisationTable" style="margin-top:15px;">
+          <thead>
+            <tr>
+              <th>Année</th>
+              <th>Facture Sans PV</th>
+              <th>Économies Autoconso</th>
+              <th>Gains Revente</th>
+              <th>Total Économies</th>
+              <th>Facture Avec PV</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rempli dynamiquement via JS -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="1">Totaux sur 20 ans</th>
+              <td id="totalSansPv">-</td>
+              <td id="totalAuto">-</td>
+              <td id="totalRevente">-</td>
+              <td id="totalEconomies">-</td>
+              <td id="totalAvecPv">-</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Résumé final sous le tableau -->
+        <div id="preconisationSummary" style="margin-top:10px;">
+          <p><strong>Puissance préconisée :</strong> <span id="puissanceReco">-</span> kWc</p>
+          <p><strong>Coût de l'installation :</strong> <span id="coutInstallation">-</span> €</p>
+          <p><strong>Gain total (sans inv.) :</strong> <span id="gainSansInv">-</span> €</p>
+          <p><strong>Gain total (avec inv.) :</strong> <span id="gainAvecInv">-</span> €</p>
+          <p><strong>ROI (années) :</strong> <span id="roiResult">-</span></p>
+        </div>
       </div>
 
       <!-- 4.5) Commentaires -->
@@ -724,7 +777,6 @@
       }
     });
 
-    // Calcul bearing
     function computeBearing(lat1, lng1, lat2, lng2) {
       const toRad = (val) => val * Math.PI / 180;
       const toDeg = (val) => val * 180 / Math.PI;
@@ -770,7 +822,6 @@
         const areaInt = Math.round(area);
 
         alert(`Surface mesurée : ${areaInt.toLocaleString('fr-FR')} m²`);
-
         document.getElementById("Surface toiture").value = areaInt;
 
         updateProductionPotential();
@@ -788,7 +839,6 @@
           document.getElementById("orientationIrr").value = aspectObj.aspect.toString();
           alert(`Orientation déterminée: ${aspectObj.label} (aspect=${aspectObj.aspect})`);
         }
-        // Retirer la ligne si on veut
         drawnItems.removeLayer(layer);
       }
     });
@@ -827,15 +877,12 @@
     }
 
     /***************************************************
-     * 3B) CALCUL PRODUCTIBLE (API PVGIS)
-     *    => On parse également la production mensuelle
+     * 3B) CALCUL PRODUCTIBLE (API PVGIS) + Parsing mensuel
      ***************************************************/
-    // Variable globale pour stocker la production mensuelle (E_m) pour usage ultérieur
     let monthlyProductionData = [];
 
     async function getProductible(lat, lon, aspectValue) {
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
-      // Utilisation d'un proxy (déjà en place)
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
         const response = await fetch(proxyUrl);
@@ -846,43 +893,28 @@
         let yearProduction = null;
         let tempMonthly = [];
 
-        // On parcours toutes les lignes pour détecter:
-        // - la ligne Year (pour E_y)
-        // - les lignes Month (pour E_m)
         for (let line of lines) {
           let cleanLine = line.trim();
-          if (!cleanLine) continue; // ignore lignes vides
-          
-          // Cherche la ligne "Year"
+          if (!cleanLine) continue;
           if (cleanLine.includes("Year")) {
             const parts = cleanLine.split("\t").map(s=>s.trim());
-            // D'habitude, le 2ème élément (index 1) correspond à E_y
-            // On stocke la valeur pour la renvoyer
             yearProduction = parseFloat(parts[1]);
-          }
-          // Cherche les lignes mensuelles : elles commencent typiquement par "1", "2", ..., "12"
-          // Format : "1\tE_d\tE_m\tH(i)_d\tH(i)_m\tSD_m"
-          // On filtre si la première "colonne" est un chiffre (1..12)
-          else if (/^\d+\s/.test(cleanLine)) {
+          } else if (/^\d+\s/.test(cleanLine)) {
             const parts = cleanLine.split("\t").map(s=>s.trim());
             if (parts.length >= 3) {
               const monthNumber = parseInt(parts[0],10);
               const E_mValue = parseFloat(parts[2]);
-              // On enregistre dans un tableau local
               tempMonthly.push({ month: monthNumber, E_m: E_mValue });
             }
           }
         }
 
-        // On met à jour la variable globale
         monthlyProductionData = tempMonthly;
 
-        // On retourne un objet avec la production annuelle ET le tableau mensuel
         return {
           yearProduction,
           monthlyProduction: tempMonthly
         };
-
       } catch (e) {
         console.error(e);
         return null;
@@ -900,25 +932,19 @@
       }
       const result = await getProductible(lat, lon, aspectValue);
       if (result !== null && result.yearProduction !== null) {
-        // Mise à jour du champ existant "productible"
         document.getElementById("productible").value =
           result.yearProduction.toLocaleString('fr-FR');
-        
-        // On remplit le tableau mensuel
         fillMonthlyProductionTable(result.monthlyProduction);
-
       } else {
         alert("Impossible de récupérer le productible. Vérifiez la connexion ou les données.");
       }
       updateProductionPotential();
     });
 
-    // Fonction qui remplit le tableau de la section "Production mensuel"
     function fillMonthlyProductionTable(monthlyData) {
       const tableBody = document.querySelector("#monthlyProductionTable tbody");
       tableBody.innerHTML = "";
 
-      // Mapping numéro de mois => nom en français
       const moisNoms = [
         "Janvier","Février","Mars","Avril","Mai","Juin",
         "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
@@ -929,7 +955,6 @@
         const monthCell = document.createElement("td");
         const productionCell = document.createElement("td");
 
-        // Sécurise l'index: ex. month=1 => moisNoms[0] = "Janvier"
         const idx = item.month - 1;
         monthCell.textContent = (idx>=0 && idx<12) ? moisNoms[idx] : `Mois ${item.month}`;
         productionCell.textContent = item.E_m?.toLocaleString('fr-FR') || "-";
@@ -945,9 +970,9 @@
      ***************************************************/
     function updateProductionPotential() {
       const surfaceStr = document.getElementById("Surface toiture").value
-        .replace(/\s/g, "") 
+        .replace(/\s/g, "")
         .replace(/\./g, "")
-        .replace(/,/g, "");
+        .replace(/,/g, ".");
       const exclStr = document.getElementById("exclusionPercent").value;
       const panelPowerStr = document.getElementById("puissancePanneau").value;
       const productibleStr = document.getElementById("productible").value
@@ -957,19 +982,14 @@
 
       const surface = parseFloat(surfaceStr) || 0;
       const exclusionPercent = parseFloat(exclStr) || 0;
-      const panelPower = parseFloat(panelPowerStr) || 420; // Wc
+      const panelPower = parseFloat(panelPowerStr) || 420;
       const productibleVal = parseFloat(productibleStr) || 0;
 
-      // Surface utile
       const surfaceUtile = surface * (1 - (exclusionPercent / 100));
-      // Nombre panneaux => 2 m²/panneau
       const nbPanels = Math.floor(surfaceUtile / 2);
-
-      // Puissance max en Wc => converti en kWc
       const puissanceMaxW = nbPanels * panelPower;
       const puissanceMaxKW = Math.round(puissanceMaxW / 1000);
 
-      // Production en kWh = puissanceMax(kWc) * productible (kWh/kWc/an)
       const production = Math.round(puissanceMaxKW * productibleVal);
 
       document.getElementById("nombrePVMax").value = nbPanels.toLocaleString('fr-FR');
@@ -1038,7 +1058,6 @@
     const loadFileInput = document.getElementById("loadFromFile");
     const uploadButton = document.getElementById("uploadFile");
 
-    // 5.1) Télécharger les données au format JSON
     saveButton.addEventListener("click", () => {
       const form = document.getElementById("userForm");
       const rawFormData = new FormData(form);
@@ -1061,11 +1080,10 @@
       formObject["mapZoom"] = map.getZoom();
       formObject["canvasImage"] = drawingCanvas.toDataURL();
 
-      // Polygones
       const shapesGeoJSON = drawnItems.toGeoJSON();
       formObject["drawnShapes"] = shapesGeoJSON;
 
-      // On sauvegarde aussi la production mensuelle déjà récupérée
+      // Sauvegarde la production mensuelle
       formObject["monthlyProductionData"] = monthlyProductionData;
 
       const companyName = formObject["companyName"] || "Formulaire";
@@ -1080,7 +1098,6 @@
       link.click();
     });
 
-    // 5.2) Charger un fichier JSON
     uploadButton.addEventListener("click", () => {
       loadFileInput.click();
     });
@@ -1113,16 +1130,12 @@
             }
           });
 
-          // Restaure la carte
-          if (
-            jsonData["mapCenterLat"] !== undefined &&
-            jsonData["mapCenterLng"] !== undefined &&
-            jsonData["mapZoom"] !== undefined
-          ) {
+          if (jsonData["mapCenterLat"] !== undefined &&
+              jsonData["mapCenterLng"] !== undefined &&
+              jsonData["mapZoom"] !== undefined) {
             map.setView([jsonData["mapCenterLat"], jsonData["mapCenterLng"]], jsonData["mapZoom"]);
           }
 
-          // Restaure le canvas
           if (jsonData["canvasImage"]) {
             const image = new Image();
             image.onload = function () {
@@ -1132,7 +1145,6 @@
             image.src = jsonData["canvasImage"];
           }
 
-          // Restaure les formes
           if (jsonData["drawnShapes"]) {
             drawnItems.clearLayers();
             L.geoJson(jsonData["drawnShapes"]).eachLayer(function(layer) {
@@ -1140,22 +1152,118 @@
             });
           }
 
-          // Restaure la production mensuelle si elle était dans le JSON
           if (jsonData["monthlyProductionData"]) {
             monthlyProductionData = jsonData["monthlyProductionData"];
             fillMonthlyProductionTable(monthlyProductionData);
           }
 
-          // Recalc table
           for (let i = 0; i < 12; i++) {
             calculateCost(i);
           }
-          // Recalc potentiel
           updateProductionPotential();
         };
         reader.readAsText(file);
       }
     });
+
+    /***************************************************
+     * (NOUVEAU) 6) CALCUL PRECONISATION SUR 20 ANS
+     ***************************************************/
+    function calculatePreconisation() {
+      // 1) Récupérer les paramètres
+      const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+
+      // Ex. on récupère la "puissanceMaxPV" ou on l'obtient via un algorithme d'optimisation
+      // Pour la démo, on va supposer qu'on prend la puissanceMaxPV
+      const puissance = parseFloat((document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g,""));
+      // Cost formula approx: S*(1.8093 - 0.00659*S)*1000 arrondi au multiple de 100
+      // => Cf. l'exemple d'intégration
+      let rawCost = puissance * (1.8093 - 0.00659 * puissance) * 1000;
+      // Arrondi au multiple de 100
+      const coutInstallationRounded = Math.round(rawCost / 100) * 100; // simplification
+
+      // 2) On imagine un certain calcul pour la facture sans PV (ex. totalEuros * (1+5%)^year)
+      //    On va remplir un tableau sur 20 ans
+      const preconTableBody = document.querySelector("#preconisationTable tbody");
+      preconTableBody.innerHTML = "";
+
+      let totalSansPv = 0, totalAuto = 0, totalRev = 0, totalEco = 0, totalAvecPv = 0;
+
+      // Récupérer la facture "sans PV" de la première année (ex: totalEuros)
+      // Par simplicité, on prend le total de la ligne "totalEuros" (annuel).
+      let baseYearEurosStr = document.getElementById("totalEuros").textContent || "0";
+      baseYearEurosStr = baseYearEurosStr.replace("€","").trim().replace(/\s/g, "").replace(",",".");
+      let baseYearEuros = parseFloat(baseYearEurosStr) || 0;
+
+      // Récupérer la production autoconsommée la 1ère année (ex: 30% de la production)
+      // Pour la démo, on va dire qu'on fait un ratio dummy
+      // (Les calculs réels nécessitent la conso mensuelle + production mensuelle, etc.)
+      let firstYearAuto = baseYearEuros * 0.3; // ex: 30% => DEMO
+
+      // Gains revente 1ère année => ex: 200€ => DEMO
+      let firstYearRevente = 200;
+
+      for (let year = 1; year <= 20; year++) {
+        // Facture sans PV
+        let factureSansPv = baseYearEuros * Math.pow(1 + annualPriceIncrease/100, (year-1));
+
+        // Économies Autoconso (s'indexent sur le prix qui augmente aussi)
+        let economiesAuto = firstYearAuto * Math.pow(1 + annualPriceIncrease/100, (year-1));
+
+        // Gains revente (ex. on garde le même surplus => ou on pourrait l'augmenter)
+        // Cf. on suppose un surplus constant => dans la réalité on peut l'indexer si c'est le prix d'achat...
+        let gainsRevente = firstYearRevente; // DEMO fixe
+
+        // Total économies
+        let totalEcos = economiesAuto + gainsRevente;
+
+        // Facture avec PV
+        let factureAvecPv = factureSansPv - economiesAuto; // la partie "non couverte"
+
+        totalSansPv += factureSansPv;
+        totalAuto += economiesAuto;
+        totalRev += gainsRevente;
+        totalEco += totalEcos;
+        totalAvecPv += factureAvecPv;
+
+        // Alimentation du tableau
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${year}</td>
+          <td>${factureSansPv.toFixed(2)} €</td>
+          <td>${economiesAuto.toFixed(2)} €</td>
+          <td>${gainsRevente.toFixed(2)} €</td>
+          <td>${totalEcos.toFixed(2)} €</td>
+          <td>${factureAvecPv.toFixed(2)} €</td>
+        `;
+        preconTableBody.appendChild(row);
+      }
+
+      // On met à jour le tfoot
+      document.getElementById("totalSansPv").textContent = totalSansPv.toFixed(2) + " €";
+      document.getElementById("totalAuto").textContent = totalAuto.toFixed(2) + " €";
+      document.getElementById("totalRevente").textContent = totalRev.toFixed(2) + " €";
+      document.getElementById("totalEconomies").textContent = totalEco.toFixed(2) + " €";
+      document.getElementById("totalAvecPv").textContent = totalAvecPv.toFixed(2) + " €";
+
+      // 3) Récap final
+      document.getElementById("puissanceReco").textContent = puissance.toLocaleString('fr-FR');
+      document.getElementById("coutInstallation").textContent = coutInstallationRounded.toLocaleString('fr-FR');
+      document.getElementById("gainSansInv").textContent = totalEco.toFixed(2) + " €";
+      // Gain avec inv. => totalEco - coût installation
+      let gainAvecInvVal = totalEco - coutInstallationRounded;
+      document.getElementById("gainAvecInv").textContent = gainAvecInvVal.toFixed(2) + " €";
+
+      // ROI => cost / gain annuel moyen => approx
+      let averageAnnualGain = totalEco / 20;
+      if (averageAnnualGain > 0) {
+        let roi = coutInstallationRounded / averageAnnualGain;
+        document.getElementById("roiResult").textContent = roi.toFixed(1);
+      } else {
+        document.getElementById("roiResult").textContent = "-";
+      }
+    }
   </script>
 </body>
 </html>
