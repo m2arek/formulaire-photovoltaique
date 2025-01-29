@@ -605,7 +605,7 @@
       <button id="uploadFile">Charger un fichier</button>
     </div>
 
-    <!-- Optionnel : zone debug (si vous voulez afficher la réponse JSON) -->
+    <!-- Zone debug (facultative) : pour afficher la réponse JSON brute -->
     <div id="debugSection" style="margin-top:15px; border:1px solid #ccc; padding:10px;">
       <h4>Réponse JSON PVGIS (debug) :</h4>
       <pre id="debugOutput" style="white-space: pre-wrap; max-height:300px; overflow:auto;">
@@ -747,7 +747,6 @@
       return best;
     }
 
-    // ***** ICI : ON N'INSÈRE PAS d'espace dans "Surface toiture" *****
     map.on(L.Draw.Event.CREATED, function (e) {
       const layer = e.layer;
       drawnItems.addLayer(layer);
@@ -760,10 +759,7 @@
         const area = L.GeometryUtil.geodesicArea(latLngs);
         const areaInt = Math.round(area);
 
-        // On peut afficher la version formatée dans l'alerte :
         alert(`Surface mesurée : ${areaInt.toLocaleString('fr-FR')} m²`);
-
-        // Mais dans le champ, on met la valeur brute (pas d'espace insécable)
         document.getElementById("Surface toiture").value = areaInt;
 
         updateProductionPotential();
@@ -781,7 +777,6 @@
           document.getElementById("orientationIrr").value = aspectObj.aspect.toString();
           alert(`Orientation déterminée: ${aspectObj.label} (aspect=${aspectObj.aspect})`);
         }
-        // Retirer la ligne si on veut
         drawnItems.removeLayer(layer);
       }
     });
@@ -820,121 +815,37 @@
     }
 
     /***************************************************
-     * 3B) CALCUL PRODUCTIBLE (SORTIE "BASIC")
-     *    (LAISSE POUR COMPATIBILITÉ)
+     * 3B) UNIQUE REQUÊTE JSON POUR TOUT RÉCUPÉRER
      ***************************************************/
-    async function getProductibleBasic(lat, lon, aspectValue) {
+    async function fetchPvgisDataJSON(lat, lon, aspectValue) {
       /*
-        Appel en mode "basic" (résultat texte avec "Year")
-      */
-      const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
-      const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
-      try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) return null;
-        const text = await response.text();
-        const lines = text.split("\n");
-        for (let line of lines) {
-          if (line.includes("Year")) {
-            const parts = line.split("\t");
-            return parseFloat(parts[1]);
-          }
-        }
-        return null;
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
-    }
-
-    /***************************************************
-     * 3B BIS) RECUPERATION EN FORMAT JSON
-     *         POUR PROD MENSUELLE ET E_y
-     *         QUI SUIT LA STRUCTURE DEMANDEE
-     ***************************************************/
-    async function getProductibleFullJSON(lat, lon, aspectValue) {
-      /*
-        On récupère un JSON structurésous la forme:
+        Appel unique (outputformat=json) qui renvoie une structure du type
         {
           "inputs": {...},
           "outputs": {
-            "monthly": {
-              "fixed": [
-                { "month": 1, "E_m": 58.08, ... },
-                { "month": 2, "E_m": 80.06, ... },
-                ...
-              ]
-            },
-            "totals": { "fixed": {...} }
+            "monthly": { "fixed": [ {month:1, E_m:58.08, ...}, ... ] },
+            "totals":  { "fixed": {... E_y, ... } }
           },
           "meta": {...}
         }
       */
-      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json&lat=${lat}&lon=${lon}&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
+      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json`
+        + `&lat=${lat}&lon=${lon}`
+        + `&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}`
+        + `&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
+
+      // Proxy (si nécessaire)
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(url)}`;
-      try {
-        const res = await fetch(proxyUrl);
-        if (!res.ok) {
-          throw new Error("Réponse réseau incorrecte");
-        }
-        const data = await res.json();
 
-        // Pour debug : afficher la réponse brute
-        console.log("Réponse JSON PVGIS:", data);
-        document.getElementById("debugOutput").textContent = JSON.stringify(data, null, 2);
-
-        // 1) Extraire la production mensuelle => data.outputs.monthly.fixed
-        const monthlyData = data.outputs.monthly.fixed || [];
-
-        // 2) Construire le tableau HTML : #monthlyProductionTable
-        const tableBody = document.querySelector("#monthlyProductionTable tbody");
-        tableBody.innerHTML = "";
-
-        const monthNames = [
-          "Janvier","Février","Mars","Avril","Mai","Juin",
-          "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
-        ];
-
-        // Pour chaque mois, insérer la ligne correspondante
-        monthlyData.forEach((item) => {
-          const row = document.createElement("tr");
-          const tdMonth = document.createElement("td");
-          const tdProd = document.createElement("td");
-
-          tdMonth.style.border = "1px solid #ddd";
-          tdMonth.style.padding = "8px";
-          tdProd.style.border = "1px solid #ddd";
-          tdProd.style.padding = "8px";
-
-          // item.month => 1..12
-          const mIndex = item.month - 1;
-          tdMonth.textContent = monthNames[mIndex] || `Mois ${item.month}`;
-
-          // item.E_m => production mensuelle en kWh
-          tdProd.textContent = item.E_m.toLocaleString('fr-FR');
-
-          row.appendChild(tdMonth);
-          row.appendChild(tdProd);
-          tableBody.appendChild(row);
-        });
-
-        // 3) Récupération de la production annuelle E_y
-        const totalsFixed = data.outputs?.totals?.fixed;
-        if (totalsFixed && totalsFixed.E_y) {
-          // Met à jour le champ productible
-          document.getElementById("productible").value =
-            parseFloat(totalsFixed.E_y).toLocaleString('fr-FR');
-        }
-
-        return true; // succès
-      } catch (err) {
-        document.getElementById("debugOutput").textContent = 
-          `Erreur lors de la requête JSON :\n${err}`;
-        return false; // échec
+      const res = await fetch(proxyUrl);
+      if (!res.ok) {
+        throw new Error(`Erreur réseau (status ${res.status})`);
       }
+      const data = await res.json();
+      return data; // On renvoie la structure JSON complète
     }
 
-    // Lors du clic sur "Calculer le productible"
+    // Au clic sur le bouton "Calculer le productible"
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
@@ -945,21 +856,58 @@
         return;
       }
 
-      // On tente d'abord la récupération JSON (avec la structure mentionnée)
-      const successJSON = await getProductibleFullJSON(lat, lon, aspectValue);
+      try {
+        // 1) Faire une seule requête JSON
+        const data = await fetchPvgisDataJSON(lat, lon, aspectValue);
 
-      // Si la requête JSON échoue, on retombe sur la version "basic"
-      if (!successJSON) {
-        const resultBasic = await getProductibleBasic(lat, lon, aspectValue);
-        if (resultBasic !== null) {
-          document.getElementById("productible").value = resultBasic.toLocaleString('fr-FR');
-        } else {
-          alert("Impossible de récupérer les données (JSON et BASIC).");
+        // 2) Affichage debug (facultatif)
+        console.log("Réponse JSON PVGIS:", data);
+        document.getElementById("debugOutput").textContent = JSON.stringify(data, null, 2);
+
+        // 3) Parcourir "outputs.monthly.fixed" pour remplir le tableau
+        const monthlyData = data.outputs.monthly.fixed || [];
+        const tableBody = document.querySelector("#monthlyProductionTable tbody");
+        tableBody.innerHTML = "";
+
+        const monthNames = [
+          "Janvier","Février","Mars","Avril","Mai","Juin",
+          "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+        ];
+
+        monthlyData.forEach((item) => {
+          const tr = document.createElement("tr");
+          const tdMonth = document.createElement("td");
+          const tdProd = document.createElement("td");
+
+          tdMonth.style.border = "1px solid #ddd";
+          tdMonth.style.padding = "8px";
+          tdProd.style.border = "1px solid #ddd";
+          tdProd.style.padding = "8px";
+
+          const mIndex = item.month - 1;
+          tdMonth.textContent = monthNames[mIndex] || `Mois ${item.month}`;
+          // E_m => production mensuelle en kWh
+          tdProd.textContent = item.E_m.toLocaleString('fr-FR');
+
+          tr.appendChild(tdMonth);
+          tr.appendChild(tdProd);
+          tableBody.appendChild(tr);
+        });
+
+        // 4) Extraire la production annuelle E_y
+        const totalsFixed = data.outputs?.totals?.fixed;
+        if (totalsFixed && totalsFixed.E_y) {
+          document.getElementById("productible").value =
+            parseFloat(totalsFixed.E_y).toLocaleString('fr-FR');
         }
-      }
 
-      // Met à jour le potentiel de production
-      updateProductionPotential();
+        // 5) Mettre à jour le "Potentiel de production"
+        updateProductionPotential();
+
+      } catch (error) {
+        console.error("Erreur fetch PVGIS JSON:", error);
+        alert("Impossible de récupérer le productible (requête JSON). " + error);
+      }
     });
 
     /***************************************************
@@ -994,7 +942,6 @@
       // Production en kWh = puissanceMax(kWc) * productible (kWh/kWc/an)
       const production = Math.round(puissanceMaxKW * productibleVal);
 
-      // On applique le séparateur de milliers pour l'affichage
       document.getElementById("nombrePVMax").value = nbPanels.toLocaleString('fr-FR');
       document.getElementById("puissanceMaxPV").value = puissanceMaxKW.toLocaleString('fr-FR');
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
