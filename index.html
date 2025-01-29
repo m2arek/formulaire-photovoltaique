@@ -98,51 +98,85 @@
       box-sizing: border-box;
       margin-top: 5px;
     }
+
     input[type="text"]:focus,
     input[type="number"]:focus,
     input[type="time"]:focus,
     textarea:focus,
     select:focus {
-      outline: none; border-color: #999;
+      outline: none;
+      border-color: #999;
     }
+
     textarea {
-      resize: vertical; min-height: 80px;
+      resize: vertical;
+      min-height: 80px;
     }
+
     .form-section {
-      background-color: #fafafa;
+      background-color: #fafafa; /* Fond clair */
       padding: 15px;
       border-radius: 5px;
       border: 1px solid #ddd;
     }
+
     .form-section h3 {
-      margin-top: 0; font-size: 18px; color: #555;
+      margin-top: 0;
+      font-size: 18px;
+      color: #555;
     }
 
     /* ------------------------------
        Boutons
     -------------------------------- */
     button {
-      display: inline-block; padding:10px 15px; font-size:14px; border:none; border-radius:4px;
-      background-color: #3498db; color:#fff; cursor:pointer; transition: background-color 0.3s ease;
-      margin-right:5px; margin-bottom:5px;
+      display: inline-block;
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      background-color: #3498db;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-right: 5px;
+      margin-bottom: 5px;
     }
-    button:hover { background-color: #2980b9; }
-    #toggleDrawingButton { float:right; }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #toggleDrawingButton {
+      float: right;
+    }
 
     /* ------------------------------
        Section carte
     -------------------------------- */
     #map-container {
       position: relative;
-      width: 100%; height: 500px; margin-bottom:20px;
-      border:1px solid #ccc; border-radius:5px; overflow:hidden;
+      width: 100%;
+      height: 500px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
     }
-    #map { width:100%; height:100%; }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
     #drawingCanvas {
-      position:absolute; top:0; left:0; width:100%; height:100%;
-      z-index:1000; pointer-events:none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000; /* Le canvas */
+      pointer-events: none;
     }
-    .leaflet-draw { z-index:1500 !important; }
+    .leaflet-draw {
+      z-index: 1500 !important;
+    }
 
     /* ------------------------------
        Grilles de checkboxes
@@ -150,32 +184,79 @@
     .checkbox-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap:5px 10px; margin-top:5px;
+      gap: 5px 10px;
+      margin-top: 5px;
     }
+
     .checkbox-grid label {
-      display:flex; align-items:center; font-weight:normal; background:#fff; padding:5px 8px;
-      border-radius:4px; border:1px solid #ccc; cursor:pointer;
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+      background: #fff;
+      padding: 5px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
     }
-    .checkbox-grid input[type="checkbox"] { margin-right:6px; }
+
+    .checkbox-grid input[type="checkbox"] {
+      margin-right: 6px;
+    }
 
     /* ------------------------------
        Tableau de consommation
     -------------------------------- */
     #consumptionTable {
-      border:1px solid #ddd; border-collapse:collapse; width:100%; text-align:center;
+      border: 1px solid #ddd;
+      border-collapse: collapse;
+      width: 100%;
+      text-align: center;
     }
     #consumptionTable th, #consumptionTable td {
-      padding:8px; font-size:14px; border:1px solid #ddd;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
     }
-    #consumptionTable thead { background-color:#f0f0f0; }
+    #consumptionTable thead {
+      background-color: #f0f0f0;
+    }
 
-    /* Responsivité, etc. inchangé */
+    /* ------------------------------
+       Tableau de production mensuelle
+    -------------------------------- */
+    #monthlyProductionTable {
+      border: 1px solid #ddd;
+      border-collapse: collapse;
+      width: 100%;
+      text-align: center;
+    }
+    #monthlyProductionTable th, #monthlyProductionTable td {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+    }
+    #monthlyProductionTable thead {
+      background-color: #f0f0f0;
+    }
+
+    /* ------------------------------
+       Responsivité
+    -------------------------------- */
+    @media (max-width: 768px) {
+      #toggleDrawingButton {
+        float: none;
+        margin-top: 10px;
+      }
+      .checkbox-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      }
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">le Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -205,6 +286,7 @@
       <!-- BLOC "Données irradiation" -->
       <div class="form-section">
         <h3>Données irradiation</h3>
+
         <label for="latitudeIrr">Latitude :</label>
         <input type="text" id="latitudeIrr" name="latitudeIrr" readonly />
 
@@ -230,8 +312,15 @@
       <!-- BLOC "Potentiel de production" -->
       <div class="form-section">
         <h3>Potentiel de production</h3>
+
         <label for="exclusionPercent">% surface exclusion :</label>
-        <input type="number" id="exclusionPercent" name="exclusionPercent" value="0"/>
+        <input
+          type="number"
+          id="exclusionPercent"
+          name="exclusionPercent"
+          value="0"
+          placeholder="Ex: 10"
+        />
 
         <label for="puissancePanneau">Puissance du panneau :</label>
         <select id="puissancePanneau" name="puissancePanneau">
@@ -250,48 +339,81 @@
         <input type="text" id="productionInstall" name="productionInstall" readonly />
       </div>
 
-      <!-- BLOC "Production mensuelle" -->
+      <!-- BLOC "Production mensuel" -->
       <div class="form-section">
-        <h3>Production mensuelle</h3>
-        <table id="monthlyProductionTable" style="border:1px solid #ddd; width:100%; border-collapse:collapse;">
+        <h3>Production mensuel</h3>
+        <table id="monthlyProductionTable">
           <thead>
-            <tr style="background-color:#f0f0f0;">
-              <th style="border:1px solid #ddd; padding:8px;">Mois</th>
-              <th style="border:1px solid #ddd; padding:8px;">Production (kWh)</th>
+            <tr>
+              <th>Mois</th>
+              <th>Production mensuelle (kWh)</th>
             </tr>
           </thead>
           <tbody>
-            <!-- Les lignes seront insérées dynamiquement -->
+            <!-- Rempli dynamiquement via JS -->
           </tbody>
         </table>
       </div>
 
-      <!-- (4.1) Infos société -->
+      <!-- 4.1) Informations société -->
       <div class="form-section">
         <h3>Informations sur la société</h3>
         <label for="Adresse">Adresse entrée :</label>
         <input type="text" id="Adresse" name="Adresse" readonly />
 
         <label for="companyName">Société :</label>
-        <input type="text" id="companyName" name="companyName" placeholder="Entrez le nom de la société"/>
-        <!-- ... etc. ... (inchangé) -->
-        
+        <input
+          type="text"
+          id="companyName"
+          name="companyName"
+          placeholder="Entrez le nom de la société"
+        />
+
         <label for="activity">Activité :</label>
-        <input type="text" id="activity" name="activity" placeholder="Entrez l'activité"/>
+        <input
+          type="text"
+          id="activity"
+          name="activity"
+          placeholder="Entrez l'activité"
+        />
+
         <label for="Nom">Nom :</label>
-        <input type="text" id="Nom" name="Nom" placeholder="Entrez le nom"/>
+        <input
+          type="text"
+          id="Nom"
+          name="Nom"
+          placeholder="Entrez le nom"
+        />
+
         <label for="Prénom">Prénom :</label>
-        <input type="text" id="Prénom" name="Prénom" placeholder="Entrez le prénom"/>
+        <input
+          type="text"
+          id="Prénom"
+          name="Prénom"
+          placeholder="Entrez le prénom"
+        />
+
         <label for="Statut">Statut :</label>
-        <input type="text" id="Statut" name="Statut" placeholder="Statut dans ste"/>
+        <input
+          type="text"
+          id="Statut"
+          name="Statut"
+          placeholder="Statut dans ste"
+        />
       </div>
 
-      <!-- (4.2) Infos toiture -->
+      <!-- 4.2) Informations toiture -->
       <div class="form-section">
         <h3>Informations sur la toiture</h3>
+
         <label for="Surface toiture">Surface toiture (m²) :</label>
-        <input type="number" id="Surface toiture" name="Surface toiture" placeholder="Entrez la surface"/>
-        
+        <input
+          type="number"
+          id="Surface toiture"
+          name="Surface toiture"
+          placeholder="Entrez la surface de la toiture"
+        />
+
         <label for="Type de toiture">Type de toiture :</label>
         <select id="Type de toiture" name="Type de toiture">
           <option value="" disabled selected>Choisissez un Type de toiture</option>
@@ -301,7 +423,12 @@
         </select>
 
         <label for="Pente toiture">Pente toiture (°) :</label>
-        <input type="number" id="Pente toiture" name="Pente toiture" placeholder="Pente de la toiture"/>
+        <input
+          type="number"
+          id="Pente toiture"
+          name="Pente toiture"
+          placeholder="Pente de la toiture"
+        />
 
         <label for="Type de couverture">Type de couverture :</label>
         <select id="Type de couverture" name="Type de couverture">
@@ -321,7 +448,7 @@
 
         <label for="Translucides">Présence de translucides :</label>
         <select id="Translucides" name="Translucides">
-          <option value="" disabled selected>Présence de translucides o/n</option>
+          <option value="" disabled selected>Presence de translucides o/n</option>
           <option value="Oui">Oui</option>
           <option value="Non">Non</option>
         </select>
@@ -334,14 +461,158 @@
         </select>
       </div>
 
-      <!-- (4.3) Periodes d'utilisation -->
-      <!-- ... inchangé ... -->
+      <!-- 4.3) Periodes d'utilisation -->
+      <div class="form-section">
+        <h3>Periodes d'utilisation</h3>
 
-      <!-- (4.4) Tableau de consommation mensuelle -->
-      <!-- ... inchangé ... -->
+        <h4>Mois de congés</h4>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="moisConges[]" value="Janvier" />Janvier</label>
+          <label><input type="checkbox" name="moisConges[]" value="Février" />Février</label>
+          <label><input type="checkbox" name="moisConges[]" value="Mars" />Mars</label>
+          <label><input type="checkbox" name="moisConges[]" value="Avril" />Avril</label>
+          <label><input type="checkbox" name="moisConges[]" value="Mai" />Mai</label>
+          <label><input type="checkbox" name="moisConges[]" value="Juin" />Juin</label>
+          <label><input type="checkbox" name="moisConges[]" value="Juillet" />Juillet</label>
+          <label><input type="checkbox" name="moisConges[]" value="Août" />Août</label>
+          <label><input type="checkbox" name="moisConges[]" value="Septembre" />Septembre</label>
+          <label><input type="checkbox" name="moisConges[]" value="Octobre" />Octobre</label>
+          <label><input type="checkbox" name="moisConges[]" value="Novembre" />Novembre</label>
+          <label><input type="checkbox" name="moisConges[]" value="Décembre" />Décembre</label>
+        </div>
 
-      <!-- (4.5) Commentaires -->
-      <!-- ... inchangé ... -->
+        <h4>Jours de congés</h4>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="joursConges[]" value="Lundi" />Lundi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Mardi" />Mardi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Mercredi" />Mercredi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Jeudi" />Jeudi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Vendredi" />Vendredi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Samedi" />Samedi</label>
+          <label><input type="checkbox" name="joursConges[]" value="Dimanche" />Dimanche</label>
+        </div>
+
+        <label for="heureDebut">Heure début travail :</label>
+        <input type="time" id="heureDebut" name="heureDebut" />
+
+        <label for="heureFin">Heure fin :</label>
+        <input type="time" id="heureFin" name="heureFin" />
+
+        <label for="Puissance compteur">Puissance compteur (Kva) :</label>
+        <input
+          type="number"
+          id="Puissance compteur"
+          name="Puissance compteur"
+          placeholder="Puissance compteur"
+        />
+      </div>
+
+      <!-- 4.4) Tableau de consommation mensuelle -->
+      <div id="consumptionTableContainer" class="form-section">
+        <h3>Consommation mensuelle</h3>
+        <table id="consumptionTable">
+          <thead>
+            <tr>
+              <th style="width: 20%;">Mois</th>
+              <th style="width: 25%;">Consommation (€)</th>
+              <th style="width: 25%;">Consommation (kWh)</th>
+              <th style="width: 30%;">Coût par kWh (€)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <script>
+              const months = [
+                "Janvier","Février","Mars","Avril","Mai","Juin",
+                "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
+              ];
+              months.forEach((month, index) => {
+                document.write(
+                  `<tr>
+                    <td>${month}</td>
+                    <td>
+                      <input
+                        type="number"
+                        id="euros_${index}"
+                        name="euros_${index}"
+                        class="euroInput"
+                        oninput="calculateCost(${index})"
+                        placeholder="€"
+                        style="width: 90%;"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        id="kwh_${index}"
+                        name="kwh_${index}"
+                        class="kwhInput"
+                        oninput="calculateCost(${index})"
+                        placeholder="kWh"
+                        style="width: 90%;"
+                      />
+                    </td>
+                    <td id="costPerKwh_${index}">-</td>
+                  </tr>`
+                );
+              });
+            </script>
+            <!-- Ligne pour les totaux annuels -->
+            <tr>
+              <td><strong>Total annuel</strong></td>
+              <td id="totalEuros">-</td>
+              <td id="totalKwh">-</td>
+              <td id="totalCostPerKwh">-</td>
+            </tr>
+          </tbody>
+        </table>
+        <script>
+          function calculateCost(index) {
+            const eurosInput = document.getElementById(`euros_${index}`);
+            const kwhInput = document.getElementById(`kwh_${index}`);
+            const costPerKwhCell = document.getElementById(`costPerKwh_${index}`);
+
+            const euros = parseFloat(eurosInput.value) || 0;
+            const kwh = parseFloat(kwhInput.value) || 0;
+
+            if (kwh > 0) {
+              const costPerKwh = (euros / kwh).toFixed(2);
+              costPerKwhCell.textContent = `${costPerKwh} €`;
+            } else {
+              costPerKwhCell.textContent = "-";
+            }
+            calculateTotals();
+          }
+
+          function calculateTotals() {
+            let totalEuros = 0, totalKwh = 0;
+            for (let i = 0; i < 12; i++) {
+              const eurosVal = parseFloat(document.getElementById(`euros_${i}`).value) || 0;
+              const kwhVal = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
+              totalEuros += eurosVal;
+              totalKwh += kwhVal;
+            }
+            const averageCostPerKwh = totalKwh > 0 ? (totalEuros / totalKwh).toFixed(2) : "-";
+
+            document.getElementById("totalEuros").textContent = 
+              totalEuros.toFixed(2).toLocaleString('fr-FR') + " €";
+            document.getElementById("totalKwh").textContent = 
+              totalKwh.toFixed(2).toLocaleString('fr-FR') + " kWh";
+            document.getElementById("totalCostPerKwh").textContent =
+              totalKwh > 0 ? `${averageCostPerKwh} €` : "-";
+          }
+        </script>
+      </div>
+
+      <!-- 4.5) Commentaires -->
+      <div class="form-section">
+        <h3>Commentaires</h3>
+        <label for="comments">Commentaires :</label>
+        <textarea
+          id="comments"
+          name="comments"
+          placeholder="Entrez vos commentaires"
+        ></textarea>
+      </div>
     </form>
 
     <!-- (5) Boutons PDF + gestion JSON -->
@@ -350,14 +621,6 @@
       <button id="saveToFile">Télécharger les données</button>
       <input type="file" id="loadFromFile" style="display: none;" />
       <button id="uploadFile">Charger un fichier</button>
-    </div>
-
-    <!-- Zone debug (facultative) : afficher la sortie TEXT brute -->
-    <div id="debugSection" style="margin-top:15px; border:1px solid #ccc; padding:10px;">
-      <h4>Réponse PVGIS (basic) - debug :</h4>
-      <pre id="debugOutput" style="white-space: pre-wrap; max-height:300px; overflow:auto;">
-        (Les données apparaîtront après le clic sur "Calculer le productible")
-      </pre>
     </div>
   </div>
 
@@ -368,7 +631,7 @@
     const map = L.map("map").setView([48.8566, 2.3522], 18);
     const tileLayer = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
       maxZoom: 20,
-      subdomains: ["mt0","mt1","mt2","mt3"],
+      subdomains: ["mt0", "mt1", "mt2", "mt3"],
       attribution: "© Google",
     });
     tileLayer.addTo(map);
@@ -384,6 +647,7 @@
 
     let drawing = false;
     let drawingEnabled = false;
+
     const toggleDrawingButton = document.getElementById("toggleDrawingButton");
     toggleDrawingButton.addEventListener("click", () => {
       drawingEnabled = !drawingEnabled;
@@ -400,23 +664,30 @@
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    drawingCanvas.addEventListener("mousedown", (evt) => {
+    drawingCanvas.addEventListener("mousedown", (event) => {
       if (!drawingEnabled) return;
       drawing = true;
       ctx.beginPath();
       const rect = drawingCanvas.getBoundingClientRect();
-      ctx.moveTo(evt.clientX - rect.left, evt.clientY - rect.top);
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      ctx.moveTo(x, y);
     });
-    drawingCanvas.addEventListener("mouseup", ()=>{
+    drawingCanvas.addEventListener("mouseup", () => {
       if (!drawingEnabled) return;
       drawing = false;
       ctx.beginPath();
     });
-    drawingCanvas.addEventListener("mousemove",(evt)=>{
-      if(!drawing||!drawingEnabled)return;
-      ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="red";
-      const rect=drawingCanvas.getBoundingClientRect();
-      ctx.lineTo(evt.clientX-rect.left, evt.clientY-rect.top);
+    drawingCanvas.addEventListener("mousemove", (event) => {
+      if (!drawing || !drawingEnabled) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "red";
+
+      const rect = drawingCanvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      ctx.lineTo(x, y);
       ctx.stroke();
     });
 
@@ -425,78 +696,99 @@
      ***************************************************/
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
+
     const drawControl = new L.Control.Draw({
-      draw:{
-        marker:false, circle:false, circlemarker:false,
-        polygon:true, rectangle:true, polyline:true
+      draw: {
+        marker: false,
+        circle: false,
+        circlemarker: false,
+        polygon: true,
+        rectangle: true,
+        polyline: true
       },
-      edit:{ featureGroup:drawnItems }
-    });
-    let measureActive=false;
-    const measureButton=document.getElementById("toggleMeasureButton");
-    measureButton.addEventListener("click",()=>{
-      measureActive=!measureActive;
-      if(measureActive){
-        map.addControl(drawControl);
-        measureButton.textContent="Terminer la mesure";
-      } else {
-        map.removeControl(drawControl);
-        measureButton.textContent="Mesurer une surface";
+      edit: {
+        featureGroup: drawnItems
       }
     });
 
-    // computeBearing + mapAngleToAspect (inchangé)
-    function computeBearing(lat1,lng1,lat2,lng2){
-      const toRad = v=>v*Math.PI/180, toDeg=v=>v*180/Math.PI;
-      const dLon=toRad(lng2-lng1);
-      const y=Math.sin(dLon)*Math.cos(toRad(lat2));
-      const x=Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dLon);
-      let brng=Math.atan2(y,x);
-      brng=toDeg(brng);
-      return (brng+360)%360;
+    let measureActive = false;
+    const measureButton = document.getElementById("toggleMeasureButton");
+    measureButton.addEventListener("click", () => {
+      measureActive = !measureActive;
+      if (measureActive) {
+        map.addControl(drawControl);
+        measureButton.textContent = "Terminer la mesure";
+      } else {
+        map.removeControl(drawControl);
+        measureButton.textContent = "Mesurer une surface";
+      }
+    });
+
+    // Calcul bearing
+    function computeBearing(lat1, lng1, lat2, lng2) {
+      const toRad = (val) => val * Math.PI / 180;
+      const toDeg = (val) => val * 180 / Math.PI;
+      const dLon = toRad(lng2 - lng1);
+      const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+      const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2))
+        - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+      let brng = Math.atan2(y, x);
+      brng = toDeg(brng);
+      return (brng + 360) % 360;
     }
-    function mapAngleToAspect(angle){
+
+    function mapAngleToAspect(angle) {
       const targets = [
-        {label:"SUD",deg:180,aspect:0},
-        {label:"EST",deg:90,aspect:-90},
-        {label:"OUEST",deg:270,aspect:90},
-        {label:"SUD-EST",deg:135,aspect:-45},
-        {label:"SUD-OUEST",deg:225,aspect:45},
+        { label: "SUD", deg: 180, aspect: 0 },
+        { label: "EST", deg: 90, aspect: -90 },
+        { label: "OUEST", deg: 270, aspect: 90 },
+        { label: "SUD-EST", deg: 135, aspect: -45 },
+        { label: "SUD-OUEST", deg: 225, aspect: 45 },
       ];
-      let best=null,bestDiff=9999;
-      for(let t of targets){
-        let diff=Math.abs(angle - t.deg);
-        if(diff>180) diff=360-diff;
-        if(diff<bestDiff){ bestDiff=diff; best=t; }
+      let best = null, bestDiff = 9999;
+      for (let t of targets) {
+        let diff = Math.abs(angle - t.deg);
+        if (diff > 180) diff = 360 - diff;
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          best = t;
+        }
       }
       return best;
     }
 
-    map.on(L.Draw.Event.CREATED,function(e){
-      const layer=e.layer;
+    map.on(L.Draw.Event.CREATED, function (e) {
+      const layer = e.layer;
       drawnItems.addLayer(layer);
 
-      if(e.layerType==="polygon"|| e.layerType==="rectangle"){
-        let latLngs=layer.getLatLngs();
-        if(Array.isArray(latLngs[0])) latLngs=latLngs[0];
-        const area=L.GeometryUtil.geodesicArea(latLngs);
-        const areaInt=Math.round(area);
+      if (e.layerType === "polygon" || e.layerType === "rectangle") {
+        let latLngs = layer.getLatLngs();
+        if (Array.isArray(latLngs[0])) {
+          latLngs = latLngs[0];
+        }
+        const area = L.GeometryUtil.geodesicArea(latLngs);
+        const areaInt = Math.round(area);
+
         alert(`Surface mesurée : ${areaInt.toLocaleString('fr-FR')} m²`);
-        document.getElementById("Surface toiture").value=areaInt;
+
+        document.getElementById("Surface toiture").value = areaInt;
+
         updateProductionPotential();
-      } else if(e.layerType==="polyline"){
-        const latLngs=layer.getLatLngs();
-        if(latLngs.length<2){
-          alert("Tracez au moins 2 points...");
+      } else if (e.layerType === "polyline") {
+        const latLngs = layer.getLatLngs();
+        if (latLngs.length < 2) {
+          alert("Tracez au moins 2 points pour la ligne d'orientation.");
           return;
         }
-        const first=latLngs[0], last=latLngs[latLngs.length-1];
-        const angle=computeBearing(first.lat, first.lng, last.lat, last.lng);
-        const aspectObj=mapAngleToAspect(angle);
-        if(aspectObj){
-          document.getElementById("orientationIrr").value=aspectObj.aspect.toString();
-          alert(`Orientation: ${aspectObj.label} (aspect=${aspectObj.aspect})`);
+        const first = latLngs[0];
+        const last = latLngs[latLngs.length - 1];
+        const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
+        const aspectObj = mapAngleToAspect(angle);
+        if (aspectObj) {
+          document.getElementById("orientationIrr").value = aspectObj.aspect.toString();
+          alert(`Orientation déterminée: ${aspectObj.label} (aspect=${aspectObj.aspect})`);
         }
+        // Retirer la ligne si on veut
         drawnItems.removeLayer(layer);
       }
     });
@@ -504,319 +796,358 @@
     /***************************************************
      * 3) RECHERCHE D'ADRESSE + MARQUEUR
      ***************************************************/
-    async function searchAddress(event){
+    async function searchAddress(event) {
       event.preventDefault();
-      const address=document.getElementById("address").value;
-      try{
-        const response=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-        const data=await response.json();
-        if(data.length>0){
-          const {lat,lon}=data[0];
-          map.setView([lat,lon],18);
-          AdresseField.value=address;
-          if(searchMarker) map.removeLayer(searchMarker);
-          searchMarker=L.marker([lat,lon]).addTo(map);
+      const address = document.getElementById("address").value;
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+        );
+        const data = await response.json();
+        if (data.length > 0) {
+          const { lat, lon } = data[0];
+          map.setView([lat, lon], 18);
+          AdresseField.value = address;
+
+          if (searchMarker) {
+            map.removeLayer(searchMarker);
+          }
+          searchMarker = L.marker([lat, lon]).addTo(map);
           searchMarker.bindPopup(`Adresse trouvée : ${address}`).openPopup();
-          document.getElementById("latitudeIrr").value=lat;
-          document.getElementById("longitudeIrr").value=lon;
+
+          document.getElementById("latitudeIrr").value = lat;
+          document.getElementById("longitudeIrr").value = lon;
         } else {
           alert("Adresse introuvable.");
         }
-      } catch(error){
-        console.error("Erreur recherche adresse:",error);
-        alert("Une erreur est survenue lors de la recherche.");
+      } catch (error) {
+        console.error("Erreur recherche adresse:", error);
+        alert("Une erreur est survenue lors de la recherche de l'adresse.");
       }
     }
 
     /***************************************************
-     * 3B) RECUPERATION DES DONNEES (BASIC)
+     * 3B) CALCUL PRODUCTIBLE (API PVGIS)
+     *    => On parse également la production mensuelle
      ***************************************************/
-    // 3B.1) fetch en mode BASIC
-    async function getPvgisBasicText(lat,lon,aspect){
-      // ex: raddatabase=PVGIS-SARAH3 + outputformat=basic
-      const baseUrl=`https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic`
-        +`&lat=${lat}&lon=${lon}`
-        +`&raddatabase=PVGIS-SARAH3`
-        +`&peakpower=1&loss=14&pvtechchoice=crystSi`
-        +`&angle=35&aspect=${aspect}&usehorizon=1`;
+    // Variable globale pour stocker la production mensuelle (E_m) pour usage ultérieur
+    let monthlyProductionData = [];
 
-      // Proxy obligatoire
-      const proxyUrl=`https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(baseUrl)}`;
+    async function getProductible(lat, lon, aspectValue) {
+      const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
+      // Utilisation d'un proxy (déjà en place)
+      const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) return null;
+        const text = await response.text();
+        const lines = text.split("\n");
 
-      const resp=await fetch(proxyUrl);
-      if(!resp.ok) throw new Error(`Erreur réseau: ${resp.status}`);
-      const text=await resp.text();
-      return text;
-    }
+        let yearProduction = null;
+        let tempMonthly = [];
 
-    // 3B.2) Parse le texte pour extraire "Year" + 12 mois
-    function parsePvgisBasicOutput(text){
-      document.getElementById("debugOutput").textContent=text; // debug
-
-      const lines=text.split("\n");
-      let productibleYear=null;
-      const monthlyData=[]; // {month:1..12, E_m}
-
-      for(let line of lines){
-        const trim=line.trim();
-        if(!trim) continue;
-
-        // Cherche "Year"
-        if(/^Year/i.test(trim)){
-          // ex: "Year  3.44  1257.14  ..."
-          const parts=trim.split(/\s+/);
-          // on suppose parts[2] = E_y
-          if(parts.length>=3){
-            const val=parseFloat(parts[2].replace(",","."));
-            if(!isNaN(val)) productibleYear=val;
+        // On parcours toutes les lignes pour détecter:
+        // - la ligne Year (pour E_y)
+        // - les lignes Month (pour E_m)
+        for (let line of lines) {
+          let cleanLine = line.trim();
+          if (!cleanLine) continue; // ignore lignes vides
+          
+          // Cherche la ligne "Year"
+          if (cleanLine.includes("Year")) {
+            const parts = cleanLine.split("\t").map(s=>s.trim());
+            // D'habitude, le 2ème élément (index 1) correspond à E_y
+            // On stocke la valeur pour la renvoyer
+            yearProduction = parseFloat(parts[1]);
           }
-        } else {
-          // Cherche si la ligne commence par 1..12 => mois
-          const match=/^(\d+)\s+/.exec(trim);
-          if(match){
-            const monthNum=parseInt(match[1],10);
-            if(monthNum>=1 && monthNum<=12){
-              const parts=trim.split(/\s+/);
-              if(parts.length>=3){
-                const e_m=parseFloat(parts[2].replace(",","."));
-                monthlyData.push({month:monthNum,E_m:e_m||0});
-              }
+          // Cherche les lignes mensuelles : elles commencent typiquement par "1", "2", ..., "12"
+          // Format : "1\tE_d\tE_m\tH(i)_d\tH(i)_m\tSD_m"
+          // On filtre si la première "colonne" est un chiffre (1..12)
+          else if (/^\d+\s/.test(cleanLine)) {
+            const parts = cleanLine.split("\t").map(s=>s.trim());
+            if (parts.length >= 3) {
+              const monthNumber = parseInt(parts[0],10);
+              const E_mValue = parseFloat(parts[2]);
+              // On enregistre dans un tableau local
+              tempMonthly.push({ month: monthNumber, E_m: E_mValue });
             }
           }
         }
-      }
 
-      return {productibleYear,monthlyData};
+        // On met à jour la variable globale
+        monthlyProductionData = tempMonthly;
+
+        // On retourne un objet avec la production annuelle ET le tableau mensuel
+        return {
+          yearProduction,
+          monthlyProduction: tempMonthly
+        };
+
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
     }
 
-    // 3B.3) Au clic => fetch + parse => affichage
-    document.getElementById("calculateIrrButton").addEventListener("click", async()=>{
-      const lat=parseFloat(document.getElementById("latitudeIrr").value);
-      const lon=parseFloat(document.getElementById("longitudeIrr").value);
-      const aspect=parseFloat(document.getElementById("orientationIrr").value);
+    document.getElementById("calculateIrrButton").addEventListener("click", async () => {
+      const lat = parseFloat(document.getElementById("latitudeIrr").value);
+      const lon = parseFloat(document.getElementById("longitudeIrr").value);
+      const aspectValue = parseFloat(document.getElementById("orientationIrr").value);
 
-      if(isNaN(lat)||isNaN(lon)){
-        alert("Veuillez d'abord renseigner la latitude et la longitude.");
+      if (isNaN(lat) || isNaN(lon)) {
+        alert("Veuillez d'abord renseigner la latitude et la longitude (recherche d'adresse).");
         return;
       }
+      const result = await getProductible(lat, lon, aspectValue);
+      if (result !== null && result.yearProduction !== null) {
+        // Mise à jour du champ existant "productible"
+        document.getElementById("productible").value =
+          result.yearProduction.toLocaleString('fr-FR');
+        
+        // On remplit le tableau mensuel
+        fillMonthlyProductionTable(result.monthlyProduction);
 
-      try {
-        const text=await getPvgisBasicText(lat,lon,aspect);
-        const {productibleYear,monthlyData}= parsePvgisBasicOutput(text);
-
-        // Mensuel => "monthlyProductionTable"
-        const tableBody=document.querySelector("#monthlyProductionTable tbody");
-        tableBody.innerHTML="";
-        const monthNames=[
-          "Janvier","Février","Mars","Avril","Mai","Juin",
-          "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
-        ];
-        monthlyData.forEach((item)=>{
-          const tr=document.createElement("tr");
-          const tdMonth=document.createElement("td");
-          const tdProd=document.createElement("td");
-          tdMonth.style.border="1px solid #ddd";
-          tdMonth.style.padding="8px";
-          tdProd.style.border="1px solid #ddd";
-          tdProd.style.padding="8px";
-
-          const i=item.month-1;
-          tdMonth.textContent=monthNames[i] || ("Mois "+item.month);
-          tdProd.textContent=item.E_m.toLocaleString('fr-FR');
-
-          tr.appendChild(tdMonth);
-          tr.appendChild(tdProd);
-          tableBody.appendChild(tr);
-        });
-
-        // productibleYear => productible
-        if(productibleYear!==null){
-          document.getElementById("productible").value=productibleYear.toLocaleString('fr-FR');
-        } else {
-          document.getElementById("productible").value="";
-          alert("Impossible de trouver la ligne Year dans la réponse PVGIS.");
-        }
-
-        // update potentiel
-        updateProductionPotential();
+      } else {
+        alert("Impossible de récupérer le productible. Vérifiez la connexion ou les données.");
       }
-      catch(e){
-        console.error("Erreur fetch/parse BASIC:",e);
-        alert("Impossible de récupérer les données (mode BASIC). "+ e);
-      }
+      updateProductionPotential();
     });
+
+    // Fonction qui remplit le tableau de la section "Production mensuel"
+    function fillMonthlyProductionTable(monthlyData) {
+      const tableBody = document.querySelector("#monthlyProductionTable tbody");
+      tableBody.innerHTML = "";
+
+      // Mapping numéro de mois => nom en français
+      const moisNoms = [
+        "Janvier","Février","Mars","Avril","Mai","Juin",
+        "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+      ];
+
+      monthlyData.forEach(item => {
+        const row = document.createElement("tr");
+        const monthCell = document.createElement("td");
+        const productionCell = document.createElement("td");
+
+        // Sécurise l'index: ex. month=1 => moisNoms[0] = "Janvier"
+        const idx = item.month - 1;
+        monthCell.textContent = (idx>=0 && idx<12) ? moisNoms[idx] : `Mois ${item.month}`;
+        productionCell.textContent = item.E_m?.toLocaleString('fr-FR') || "-";
+
+        row.appendChild(monthCell);
+        row.appendChild(productionCell);
+        tableBody.appendChild(row);
+      });
+    }
 
     /***************************************************
      * 3C) CALCUL "POTENTIEL DE PRODUCTION"
      ***************************************************/
     function updateProductionPotential() {
       const surfaceStr = document.getElementById("Surface toiture").value
-        .replace(/\s/g,"").replace(/\./g,"").replace(/,/g,"");
+        .replace(/\s/g, "") 
+        .replace(/\./g, "")
+        .replace(/,/g, "");
       const exclStr = document.getElementById("exclusionPercent").value;
       const panelPowerStr = document.getElementById("puissancePanneau").value;
       const productibleStr = document.getElementById("productible").value
-        .replace(/\s/g,"").replace(/\./g,"").replace(/,/g,".");
+        .replace(/\s/g, "")
+        .replace(/\./g, "")
+        .replace(/,/g, ".");
 
       const surface = parseFloat(surfaceStr) || 0;
       const exclusionPercent = parseFloat(exclStr) || 0;
-      const panelPower = parseFloat(panelPowerStr) || 420; 
+      const panelPower = parseFloat(panelPowerStr) || 420; // Wc
       const productibleVal = parseFloat(productibleStr) || 0;
 
-      const surfaceUtile = surface*(1 - (exclusionPercent/100));
-      const nbPanels = Math.floor(surfaceUtile/2);
-      const puissanceMaxW = nbPanels*panelPower;
-      const puissanceMaxKW = Math.round(puissanceMaxW/1000);
+      // Surface utile
+      const surfaceUtile = surface * (1 - (exclusionPercent / 100));
+      // Nombre panneaux => 2 m²/panneau
+      const nbPanels = Math.floor(surfaceUtile / 2);
 
-      // Production = puissanceMax(kWc)* productible (kWh/kWc/an)
-      const production = Math.round(puissanceMaxKW*productibleVal);
+      // Puissance max en Wc => converti en kWc
+      const puissanceMaxW = nbPanels * panelPower;
+      const puissanceMaxKW = Math.round(puissanceMaxW / 1000);
 
-      document.getElementById("nombrePVMax").value=nbPanels.toLocaleString('fr-FR');
-      document.getElementById("puissanceMaxPV").value=puissanceMaxKW.toLocaleString('fr-FR');
-      document.getElementById("productionInstall").value=production.toLocaleString('fr-FR');
+      // Production en kWh = puissanceMax(kWc) * productible (kWh/kWc/an)
+      const production = Math.round(puissanceMaxKW * productibleVal);
+
+      document.getElementById("nombrePVMax").value = nbPanels.toLocaleString('fr-FR');
+      document.getElementById("puissanceMaxPV").value = puissanceMaxKW.toLocaleString('fr-FR');
+      document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
     }
 
-    // On recalcule quand l’utilisateur modifie
-    document.getElementById("Surface toiture").addEventListener("input", updateProductionPotential);
-    document.getElementById("exclusionPercent").addEventListener("input", updateProductionPotential);
-    document.getElementById("puissancePanneau").addEventListener("change", updateProductionPotential);
-    document.getElementById("productible").addEventListener("input", updateProductionPotential);
+    const surfaceInput = document.getElementById("Surface toiture");
+    const exclInput = document.getElementById("exclusionPercent");
+    const panelSelect = document.getElementById("puissancePanneau");
+    const productibleInput = document.getElementById("productible");
+
+    surfaceInput.addEventListener("input", updateProductionPotential);
+    exclInput.addEventListener("input", updateProductionPotential);
+    panelSelect.addEventListener("change", updateProductionPotential);
+    productibleInput.addEventListener("input", updateProductionPotential);
 
     /***************************************************
      * 4) EXPORT PDF (2 PAGES)
      ***************************************************/
     function saveMapAsPDF() {
-      const mapContainer=document.getElementById("map-container");
-      const userForm=document.getElementById("userForm");
+      const mapContainer = document.getElementById("map-container");
+      const userForm = document.getElementById("userForm");
 
-      html2canvas(mapContainer,{useCORS:true,scale:2}).then((canvas)=>{
-        const mapImage=canvas.toDataURL("image/png");
-        const {jsPDF}=window.jspdf;
-        const pdf=new jsPDF();
-        pdf.addImage(mapImage,"PNG",10,10,190,100);
+      html2canvas(mapContainer, {
+        useCORS: true,
+        scale: 2,
+      }).then((canvas) => {
+        const mapImage = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
 
-        let yOffset=120;
-        const formData=new FormData(userForm);
-        formData.forEach((value,key)=>{
-          if(value){
-            pdf.text(`${key} : ${value}`,10,yOffset);
-            yOffset+=10;
+        pdf.addImage(mapImage, "PNG", 10, 10, 190, 100);
+
+        let yOffset = 120;
+        const formData = new FormData(userForm);
+        formData.forEach((value, key) => {
+          if (value) {
+            pdf.text(`${key} : ${value}`, 10, yOffset);
+            yOffset += 10;
           }
         });
 
         pdf.addPage();
-        pdf.text("Consommation mensuelle",10,10);
-        html2canvas(document.getElementById("consumptionTableContainer"),{useCORS:true,scale:2})
-          .then((tableCanvas)=>{
-            const tableImage=tableCanvas.toDataURL("image/png");
-            pdf.addImage(tableImage,"PNG",10,20,190,0);
-            const companyName=document.getElementById("companyName").value;
-            const pdfFileName=companyName? `Formulaire_${companyName}.pdf`:"Formulaire.pdf";
-            pdf.save(pdfFileName);
-          });
+        pdf.text("Consommation mensuelle", 10, 10);
+        html2canvas(document.getElementById("consumptionTableContainer"), {
+          useCORS: true,
+          scale: 2,
+        }).then((tableCanvas) => {
+          const tableImage = tableCanvas.toDataURL("image/png");
+          pdf.addImage(tableImage, "PNG", 10, 20, 190, 0);
+
+          const companyName = document.getElementById("companyName").value;
+          const pdfFileName = companyName
+            ? `Formulaire_${companyName}.pdf`
+            : "Formulaire.pdf";
+          pdf.save(pdfFileName);
+        });
       });
     }
 
     /***************************************************
      * 5) SAUVEGARDER / CHARGER JSON
      ***************************************************/
-    const saveButton=document.getElementById("saveToFile");
-    const loadFileInput=document.getElementById("loadFromFile");
-    const uploadButton=document.getElementById("uploadFile");
+    const saveButton = document.getElementById("saveToFile");
+    const loadFileInput = document.getElementById("loadFromFile");
+    const uploadButton = document.getElementById("uploadFile");
 
-    // 5.1) Télécharger
-    saveButton.addEventListener("click",()=>{
-      const form=document.getElementById("userForm");
-      const rawFormData=new FormData(form);
-      const formObject={};
+    // 5.1) Télécharger les données au format JSON
+    saveButton.addEventListener("click", () => {
+      const form = document.getElementById("userForm");
+      const rawFormData = new FormData(form);
 
-      rawFormData.forEach((value,key)=>{
-        if(formObject[key]!==undefined){
-          if(!Array.isArray(formObject[key])){
-            formObject[key]=[formObject[key]];
+      const formObject = {};
+      rawFormData.forEach((value, key) => {
+        if (formObject[key] !== undefined) {
+          if (!Array.isArray(formObject[key])) {
+            formObject[key] = [formObject[key]];
           }
           formObject[key].push(value);
         } else {
-          formObject[key]=value;
+          formObject[key] = value;
         }
       });
 
-      const center=map.getCenter();
-      formObject["mapCenterLat"]=center.lat;
-      formObject["mapCenterLng"]=center.lng;
-      formObject["mapZoom"]=map.getZoom();
-      formObject["canvasImage"]=drawingCanvas.toDataURL();
+      const center = map.getCenter();
+      formObject["mapCenterLat"] = center.lat;
+      formObject["mapCenterLng"] = center.lng;
+      formObject["mapZoom"] = map.getZoom();
+      formObject["canvasImage"] = drawingCanvas.toDataURL();
 
       // Polygones
-      const shapesGeoJSON=drawnItems.toGeoJSON();
-      formObject["drawnShapes"]=shapesGeoJSON;
+      const shapesGeoJSON = drawnItems.toGeoJSON();
+      formObject["drawnShapes"] = shapesGeoJSON;
 
-      const companyName=formObject["companyName"]||"Formulaire";
-      const fileName=`Formulaire_${companyName}.json`;
+      // On sauvegarde aussi la production mensuelle déjà récupérée
+      formObject["monthlyProductionData"] = monthlyProductionData;
 
-      const jsonString=JSON.stringify(formObject,null,2);
-      const blob=new Blob([jsonString],{type:"application/json"});
-      const link=document.createElement("a");
-      link.href=URL.createObjectURL(blob);
-      link.download=fileName;
+      const companyName = formObject["companyName"] || "Formulaire";
+      const fileName = `Formulaire_${companyName}.json`;
+
+      const jsonString = JSON.stringify(formObject, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
       link.click();
     });
 
     // 5.2) Charger un fichier JSON
-    uploadButton.addEventListener("click",()=>{
+    uploadButton.addEventListener("click", () => {
       loadFileInput.click();
     });
-    loadFileInput.addEventListener("change",(event)=>{
-      const file=event.target.files[0];
-      if(file){
-        const reader=new FileReader();
-        reader.onload=(e)=>{
-          const jsonData=JSON.parse(e.target.result);
-          const form=document.getElementById("userForm");
 
-          Object.keys(jsonData).forEach((key)=>{
-            const dataValue=jsonData[key];
-            // Clés spéciales => map, canvas, shapes
-            if(["mapCenterLat","mapCenterLng","mapZoom","canvasImage","drawnShapes"].includes(key)){
+    loadFileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const jsonData = JSON.parse(e.target.result);
+          const form = document.getElementById("userForm");
+
+          Object.keys(jsonData).forEach((key) => {
+            const dataValue = jsonData[key];
+            if (["mapCenterLat","mapCenterLng","mapZoom","canvasImage","drawnShapes","monthlyProductionData"].includes(key)) {
               return;
             }
-            if(Array.isArray(dataValue)){
-              dataValue.forEach((val)=>{
-                const checkbox=form.querySelector(`[name="${key}"][value="${val}"]`);
-                if(checkbox) checkbox.checked=true;
+            if (Array.isArray(dataValue)) {
+              dataValue.forEach((val) => {
+                const checkbox = form.querySelector(`[name="${key}"][value="${val}"]`);
+                if (checkbox) {
+                  checkbox.checked = true;
+                }
               });
             } else {
-              const input=form.querySelector(`[name="${key}"]`);
-              if(input) input.value=dataValue;
+              const input = form.querySelector(`[name="${key}"]`);
+              if (input) {
+                input.value = dataValue;
+              }
             }
           });
 
           // Restaure la carte
-          if(jsonData["mapCenterLat"]!==undefined &&
-             jsonData["mapCenterLng"]!==undefined &&
-             jsonData["mapZoom"]!==undefined){
-            map.setView([jsonData["mapCenterLat"],jsonData["mapCenterLng"]],jsonData["mapZoom"]);
+          if (
+            jsonData["mapCenterLat"] !== undefined &&
+            jsonData["mapCenterLng"] !== undefined &&
+            jsonData["mapZoom"] !== undefined
+          ) {
+            map.setView([jsonData["mapCenterLat"], jsonData["mapCenterLng"]], jsonData["mapZoom"]);
           }
 
           // Restaure le canvas
-          if(jsonData["canvasImage"]){
-            const image=new Image();
-            image.onload=function(){
-              ctx.clearRect(0,0,drawingCanvas.width,drawingCanvas.height);
-              ctx.drawImage(image,0,0);
+          if (jsonData["canvasImage"]) {
+            const image = new Image();
+            image.onload = function () {
+              ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+              ctx.drawImage(image, 0, 0);
             };
-            image.src=jsonData["canvasImage"];
+            image.src = jsonData["canvasImage"];
           }
 
           // Restaure les formes
-          if(jsonData["drawnShapes"]){
+          if (jsonData["drawnShapes"]) {
             drawnItems.clearLayers();
-            L.geoJson(jsonData["drawnShapes"]).eachLayer(function(layer){
+            L.geoJson(jsonData["drawnShapes"]).eachLayer(function(layer) {
               drawnItems.addLayer(layer);
             });
           }
 
-          // Recalc tableau
-          for(let i=0;i<12;i++){
+          // Restaure la production mensuelle si elle était dans le JSON
+          if (jsonData["monthlyProductionData"]) {
+            monthlyProductionData = jsonData["monthlyProductionData"];
+            fillMonthlyProductionTable(monthlyProductionData);
+          }
+
+          // Recalc table
+          for (let i = 0; i < 12; i++) {
             calculateCost(i);
           }
           // Recalc potentiel
@@ -825,20 +1156,6 @@
         reader.readAsText(file);
       }
     });
-
-    /***************************************************
-     * 6) FONCTIONS TABLEAU CONSOMMATION
-     ***************************************************/
-    // On suppose qu'elles existent (calculateCost, etc.)
-    function calculateCost(index){
-      // inchangé, ex:
-      // let eurosInput=..., kwhInput=...; ...
-      // see code consomation
-    }
-    function calculateTotals(){
-      // ...
-    }
-
   </script>
 </body>
 </html>
