@@ -175,7 +175,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour saisies données FRH PRO</h1>
+    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -533,10 +533,10 @@
      ***************************************************/
     // 3B.1) fetch en mode BASIC
     async function getPvgisBasicText(lat,lon,aspect){
-      // ex: raddatabase=PVGIS-SARAH2 + outputformat=basic
+      // ex: raddatabase=PVGIS-SARAH3 + outputformat=basic
       const baseUrl=`https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic`
         +`&lat=${lat}&lon=${lon}`
-        +`&raddatabase=PVGIS-SARAH2`
+        +`&raddatabase=PVGIS-SARAH3`
         +`&peakpower=1&loss=14&pvtechchoice=crystSi`
         +`&angle=35&aspect=${aspect}&usehorizon=1`;
 
