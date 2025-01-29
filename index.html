@@ -321,7 +321,7 @@
         <input type="text" id="productionInstall" name="productionInstall" readonly />
       </div>
 
-      <!-- NOUVEAU BLOC: "Production mensuelle" -->
+      <!-- BLOC "Production mensuelle" -->
       <div class="form-section">
         <h3>Production mensuelle</h3>
         <table id="monthlyProductionTable" style="border: 1px solid #ddd; width: 100%; border-collapse: collapse;">
@@ -575,9 +575,9 @@
             }
             const averageCostPerKwh = totalKwh > 0 ? (totalEuros / totalKwh).toFixed(2) : "-";
 
-            document.getElementById("totalEuros").textContent = 
+            document.getElementById("totalEuros").textContent =
               totalEuros.toFixed(2).toLocaleString('fr-FR') + " €";
-            document.getElementById("totalKwh").textContent = 
+            document.getElementById("totalKwh").textContent =
               totalKwh.toFixed(2).toLocaleString('fr-FR') + " kWh";
             document.getElementById("totalCostPerKwh").textContent =
               totalKwh > 0 ? `${averageCostPerKwh} €` : "-";
@@ -812,10 +812,13 @@
     }
 
     /***************************************************
-     * 3B) RECUP & AFFICHAGE PRODUCTIBLE (MODE 'BASIC')
-     *    (RESTE POUR COMPATIBILITÉ, NE PAS SUPPRIMER)
+     * 3B) CALCUL PRODUCTIBLE (SORTIE "BASIC")
+     *    (LAISSE POUR COMPATIBILITÉ)
      ***************************************************/
     async function getProductible(lat, lon, aspectValue) {
+      /*
+        Appel en mode "basic" (résultat texte avec "Year")
+      */
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
@@ -837,15 +840,13 @@
     }
 
     /***************************************************
-     * 3B BIS) NOUVELLE FONCTION POUR PRODUCTION MENSUELLE
-     *         (FORMAT JSON DE L'API PVGIS)
+     * 3B BIS) RECUPERATION EN FORMAT JSON
+     *         POUR PROD MENSUELLE ET E_y
      ***************************************************/
     async function fetchMonthlyProduction(lat, lon, aspectValue) {
       /*
-        Pour récupérer la production mensuelle (E_m) au format JSON,
-        on interroge la même API mais avec outputformat=json et on
-        exploite la clef "outputs.monthly.fixed".
-        Ajustez raddatabase, angle, etc. si nécessaire.
+        On récupère la production mensuelle ET la production annuelle
+        dans le même JSON. => outputs.monthly.fixed & outputs.totals.fixed
       */
       const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json&lat=${lat}&lon=${lon}&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(url)}`;
@@ -853,14 +854,12 @@
         const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error("Réponse réseau incorrecte");
         const data = await res.json();
-        // data.outputs.monthly.fixed => tableau des données mensuelles
-        const monthlyData = data.outputs.monthly.fixed || [];
 
-        // Vide le tableau avant de l'alimenter
+        // 1) Récupère production mensuelle
+        const monthlyData = data.outputs.monthly.fixed || [];
         const tableBody = document.querySelector("#monthlyProductionTable tbody");
         tableBody.innerHTML = "";
 
-        // Pour afficher le mois en clair
         const monthNames = [
           "Janvier","Février","Mars","Avril","Mai","Juin",
           "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
@@ -876,7 +875,7 @@
           productionCell.style.border = "1px solid #ddd";
           productionCell.style.padding = "8px";
 
-          // item.month: 1 => Janvier, 2 => Février, etc.
+          // item.month: 1 => Janvier, etc.
           const mIndex = item.month - 1;
           if (mIndex >= 0 && mIndex < 12) {
             monthCell.textContent = monthNames[mIndex];
@@ -884,16 +883,26 @@
             monthCell.textContent = "Mois " + item.month;
           }
 
-          // item.E_m => production mensuelle en kWh
+          // item.E_m => production mensuelle (kWh)
           productionCell.textContent = item.E_m.toLocaleString('fr-FR');
 
           row.appendChild(monthCell);
           row.appendChild(productionCell);
           tableBody.appendChild(row);
         });
+
+        // 2) Récupère la production annuelle E_y
+        const yearlyData = data.outputs?.totals?.fixed;
+        if (yearlyData && yearlyData.E_y) {
+          // On met à jour le champ "productible"
+          document.getElementById("productible").value = parseFloat(yearlyData.E_y)
+            .toLocaleString('fr-FR');
+        }
+
+        return true; // succès
       } catch (e) {
         console.error(e);
-        alert("Impossible de récupérer les données mensuelles (API PVGIS).");
+        return false; // échec
       }
     }
 
@@ -907,18 +916,20 @@
         return;
       }
 
-      // A) On récupère le productible via l'API "basic" existante
-      const result = await getProductible(lat, lon, aspectValue);
-      if (result !== null) {
-        document.getElementById("productible").value = result.toLocaleString('fr-FR');
-      } else {
-        alert("Impossible de récupérer le productible en mode 'basic'.");
+      // B) On tente la récupération JSON (production mensuelle + E_y)
+      const successJSON = await fetchMonthlyProduction(lat, lon, aspectValue);
+
+      // S'il y a un souci avec la requête JSON, on essaie quand même la sortie "basic"
+      if (!successJSON) {
+        const resultBasic = await getProductible(lat, lon, aspectValue);
+        if (resultBasic !== null) {
+          document.getElementById("productible").value = resultBasic.toLocaleString('fr-FR');
+        } else {
+          alert("Impossible de récupérer les données (JSON et BASIC).");
+        }
       }
 
-      // B) On récupère la production mensuelle (JSON) et on peuple le tableau
-      fetchMonthlyProduction(lat, lon, aspectValue);
-
-      // C) Met à jour le potentiel de production
+      // Met ensuite à jour le potentiel de production
       updateProductionPotential();
     });
 
@@ -1076,6 +1087,7 @@
 
           Object.keys(jsonData).forEach((key) => {
             const dataValue = jsonData[key];
+            // Clés spéciales => map, canvas, shapes
             if (["mapCenterLat","mapCenterLng","mapZoom","canvasImage","drawnShapes"].includes(key)) {
               return;
             }
