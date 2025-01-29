@@ -238,7 +238,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour la saisie données FRH PRO</h1>
+    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -815,37 +815,34 @@
     }
 
     /***************************************************
-     * 3B) UNIQUE REQUÊTE JSON POUR TOUT RÉCUPÉRER
+     * 3B) REQUÊTE JSON AVEC PROXY (OBLIGATOIRE)
      ***************************************************/
     async function fetchPvgisDataJSON(lat, lon, aspectValue) {
       /*
-        Appel unique (outputformat=json) qui renvoie une structure du type
-        {
-          "inputs": {...},
-          "outputs": {
-            "monthly": { "fixed": [ {month:1, E_m:58.08, ...}, ... ] },
-            "totals":  { "fixed": {... E_y, ... } }
-          },
-          "meta": {...}
-        }
+        Appel unique en mode JSON, passant par le proxy
+        pour récupérer tout : productible annuel (E_y)
+        et production mensuelle (E_m).
       */
-      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json`
+      // Construire l'URL de base PVGIS
+      const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json`
         + `&lat=${lat}&lon=${lon}`
         + `&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}`
         + `&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
 
-      // Proxy (si nécessaire)
-      const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(url)}`;
+      // Construire l'URL du proxy (obligatoire)
+      // Exemple : "https://votre-proxy.fr/?url=..."
+      // Ici, on utilise l'exemple "corsproxy.io", mais mettez votre proxy payant
+      const finalUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(pvgisUrl)}`;
 
-      const res = await fetch(proxyUrl);
+      const res = await fetch(finalUrl);
       if (!res.ok) {
         throw new Error(`Erreur réseau (status ${res.status})`);
       }
       const data = await res.json();
-      return data; // On renvoie la structure JSON complète
+      return data;
     }
 
-    // Au clic sur le bouton "Calculer le productible"
+    // Clic sur "Calculer le productible"
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
@@ -857,14 +854,14 @@
       }
 
       try {
-        // 1) Faire une seule requête JSON
+        // 1) Faire la requête via le proxy
         const data = await fetchPvgisDataJSON(lat, lon, aspectValue);
 
         // 2) Affichage debug (facultatif)
         console.log("Réponse JSON PVGIS:", data);
         document.getElementById("debugOutput").textContent = JSON.stringify(data, null, 2);
 
-        // 3) Parcourir "outputs.monthly.fixed" pour remplir le tableau
+        // 3) Remplir le tableau "Production mensuelle" avec E_m
         const monthlyData = data.outputs.monthly.fixed || [];
         const tableBody = document.querySelector("#monthlyProductionTable tbody");
         tableBody.innerHTML = "";
@@ -874,7 +871,7 @@
           "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
         ];
 
-        monthlyData.forEach((item) => {
+        monthlyData.forEach(item => {
           const tr = document.createElement("tr");
           const tdMonth = document.createElement("td");
           const tdProd = document.createElement("td");
@@ -884,9 +881,11 @@
           tdProd.style.border = "1px solid #ddd";
           tdProd.style.padding = "8px";
 
+          // Nom du mois
           const mIndex = item.month - 1;
           tdMonth.textContent = monthNames[mIndex] || `Mois ${item.month}`;
-          // E_m => production mensuelle en kWh
+
+          // Production mensuelle E_m
           tdProd.textContent = item.E_m.toLocaleString('fr-FR');
 
           tr.appendChild(tdMonth);
@@ -894,19 +893,19 @@
           tableBody.appendChild(tr);
         });
 
-        // 4) Extraire la production annuelle E_y
+        // 4) Récupérer E_y (productible annuel)
         const totalsFixed = data.outputs?.totals?.fixed;
         if (totalsFixed && totalsFixed.E_y) {
           document.getElementById("productible").value =
             parseFloat(totalsFixed.E_y).toLocaleString('fr-FR');
         }
 
-        // 5) Mettre à jour le "Potentiel de production"
+        // 5) Mettre à jour le potentiel de production
         updateProductionPotential();
 
       } catch (error) {
-        console.error("Erreur fetch PVGIS JSON:", error);
-        alert("Impossible de récupérer le productible (requête JSON). " + error);
+        console.error("Erreur requête PVGIS via proxy:", error);
+        alert("Impossible de récupérer les données PVGIS : " + error);
       }
     });
 
@@ -939,7 +938,7 @@
       const puissanceMaxW = nbPanels * panelPower;
       const puissanceMaxKW = Math.round(puissanceMaxW / 1000);
 
-      // Production en kWh = puissanceMax(kWc) * productible (kWh/kWc/an)
+      // Production en kWh = puissanceMax(kWc) * productible
       const production = Math.round(puissanceMaxKW * productibleVal);
 
       document.getElementById("nombrePVMax").value = nbPanels.toLocaleString('fr-FR');
@@ -947,7 +946,7 @@
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
     }
 
-    // On recalcule quand l’utilisateur modifie ces champs
+    // Recalcule quand l’utilisateur modifie les champs
     const surfaceInput = document.getElementById("Surface toiture");
     const exclInput = document.getElementById("exclusionPercent");
     const panelSelect = document.getElementById("puissancePanneau");
