@@ -238,7 +238,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title"> le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -605,9 +605,9 @@
       <button id="uploadFile">Charger un fichier</button>
     </div>
 
-    <!-- BLOC DE DEBUG POUR AFFICHER LA RÉPONSE PVGIS -->
+    <!-- Optionnel : zone debug (si vous voulez afficher la réponse JSON) -->
     <div id="debugSection" style="margin-top:15px; border:1px solid #ccc; padding:10px;">
-      <h4>Réponse brute de l'API PVGIS (debug) :</h4>
+      <h4>Réponse JSON PVGIS (debug) :</h4>
       <pre id="debugOutput" style="white-space: pre-wrap; max-height:300px; overflow:auto;">
         (Les données apparaîtront après le clic sur "Calculer le productible")
       </pre>
@@ -823,7 +823,7 @@
      * 3B) CALCUL PRODUCTIBLE (SORTIE "BASIC")
      *    (LAISSE POUR COMPATIBILITÉ)
      ***************************************************/
-    async function getProductible(lat, lon, aspectValue) {
+    async function getProductibleBasic(lat, lon, aspectValue) {
       /*
         Appel en mode "basic" (résultat texte avec "Year")
       */
@@ -850,25 +850,43 @@
     /***************************************************
      * 3B BIS) RECUPERATION EN FORMAT JSON
      *         POUR PROD MENSUELLE ET E_y
+     *         QUI SUIT LA STRUCTURE DEMANDEE
      ***************************************************/
-    async function fetchMonthlyProduction(lat, lon, aspectValue) {
+    async function getProductibleFullJSON(lat, lon, aspectValue) {
       /*
-        On récupère la production mensuelle ET la production annuelle
-        dans le même JSON => outputs.monthly.fixed & outputs.totals.fixed
+        On récupère un JSON structurésous la forme:
+        {
+          "inputs": {...},
+          "outputs": {
+            "monthly": {
+              "fixed": [
+                { "month": 1, "E_m": 58.08, ... },
+                { "month": 2, "E_m": 80.06, ... },
+                ...
+              ]
+            },
+            "totals": { "fixed": {...} }
+          },
+          "meta": {...}
+        }
       */
       const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=json&lat=${lat}&lon=${lon}&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1&startyear=2005&endyear=2023&raddatabase=PVGIS-SARAH3`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(url)}`;
       try {
         const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("Réponse réseau incorrecte");
+        if (!res.ok) {
+          throw new Error("Réponse réseau incorrecte");
+        }
         const data = await res.json();
 
-        // === DEBUG ===
+        // Pour debug : afficher la réponse brute
         console.log("Réponse JSON PVGIS:", data);
         document.getElementById("debugOutput").textContent = JSON.stringify(data, null, 2);
 
-        // 1) Récupère production mensuelle
+        // 1) Extraire la production mensuelle => data.outputs.monthly.fixed
         const monthlyData = data.outputs.monthly.fixed || [];
+
+        // 2) Construire le tableau HTML : #monthlyProductionTable
         const tableBody = document.querySelector("#monthlyProductionTable tbody");
         tableBody.innerHTML = "";
 
@@ -877,49 +895,46 @@
           "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
         ];
 
+        // Pour chaque mois, insérer la ligne correspondante
         monthlyData.forEach((item) => {
           const row = document.createElement("tr");
-          const monthCell = document.createElement("td");
-          const productionCell = document.createElement("td");
+          const tdMonth = document.createElement("td");
+          const tdProd = document.createElement("td");
 
-          monthCell.style.border = "1px solid #ddd";
-          monthCell.style.padding = "8px";
-          productionCell.style.border = "1px solid #ddd";
-          productionCell.style.padding = "8px";
+          tdMonth.style.border = "1px solid #ddd";
+          tdMonth.style.padding = "8px";
+          tdProd.style.border = "1px solid #ddd";
+          tdProd.style.padding = "8px";
 
-          // item.month: 1 => Janvier, etc.
+          // item.month => 1..12
           const mIndex = item.month - 1;
-          if (mIndex >= 0 && mIndex < 12) {
-            monthCell.textContent = monthNames[mIndex];
-          } else {
-            monthCell.textContent = "Mois " + item.month;
-          }
+          tdMonth.textContent = monthNames[mIndex] || `Mois ${item.month}`;
 
-          // item.E_m => production mensuelle (kWh)
-          productionCell.textContent = item.E_m.toLocaleString('fr-FR');
+          // item.E_m => production mensuelle en kWh
+          tdProd.textContent = item.E_m.toLocaleString('fr-FR');
 
-          row.appendChild(monthCell);
-          row.appendChild(productionCell);
+          row.appendChild(tdMonth);
+          row.appendChild(tdProd);
           tableBody.appendChild(row);
         });
 
-        // 2) Récupère la production annuelle E_y
-        const yearlyData = data.outputs?.totals?.fixed;
-        if (yearlyData && yearlyData.E_y) {
-          // On met à jour le champ "productible"
-          document.getElementById("productible").value = parseFloat(yearlyData.E_y)
-            .toLocaleString('fr-FR');
+        // 3) Récupération de la production annuelle E_y
+        const totalsFixed = data.outputs?.totals?.fixed;
+        if (totalsFixed && totalsFixed.E_y) {
+          // Met à jour le champ productible
+          document.getElementById("productible").value =
+            parseFloat(totalsFixed.E_y).toLocaleString('fr-FR');
         }
 
         return true; // succès
-      } catch (e) {
-        console.error(e);
-        document.getElementById("debugOutput").textContent =
-          "Erreur lors de l'appel JSON PVGIS:\n" + e;
+      } catch (err) {
+        document.getElementById("debugOutput").textContent = 
+          `Erreur lors de la requête JSON :\n${err}`;
         return false; // échec
       }
     }
 
+    // Lors du clic sur "Calculer le productible"
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
@@ -930,12 +945,12 @@
         return;
       }
 
-      // B) On tente la récupération JSON (production mensuelle + E_y)
-      const successJSON = await fetchMonthlyProduction(lat, lon, aspectValue);
+      // On tente d'abord la récupération JSON (avec la structure mentionnée)
+      const successJSON = await getProductibleFullJSON(lat, lon, aspectValue);
 
-      // S'il y a un souci avec la requête JSON, on essaie quand même la sortie "basic"
+      // Si la requête JSON échoue, on retombe sur la version "basic"
       if (!successJSON) {
-        const resultBasic = await getProductible(lat, lon, aspectValue);
+        const resultBasic = await getProductibleBasic(lat, lon, aspectValue);
         if (resultBasic !== null) {
           document.getElementById("productible").value = resultBasic.toLocaleString('fr-FR');
         } else {
@@ -943,7 +958,7 @@
         }
       }
 
-      // Met ensuite à jour le potentiel de production
+      // Met à jour le potentiel de production
       updateProductionPotential();
     });
 
@@ -979,7 +994,7 @@
       // Production en kWh = puissanceMax(kWc) * productible (kWh/kWc/an)
       const production = Math.round(puissanceMaxKW * productibleVal);
 
-      // On applique le séparateur de milliers pour l'affichage final
+      // On applique le séparateur de milliers pour l'affichage
       document.getElementById("nombrePVMax").value = nbPanels.toLocaleString('fr-FR');
       document.getElementById("puissanceMaxPV").value = puissanceMaxKW.toLocaleString('fr-FR');
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
