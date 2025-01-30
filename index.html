@@ -7,19 +7,15 @@
 
   <!-- (1) Leaflet CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
-
   <!-- (2) Leaflet Draw + GeometryUtil CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
 
   <!-- (3) Leaflet JS -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <!-- (4) Leaflet Draw JS -->
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-
   <!-- (5) GeometryUtil (pour la surface) -->
   <script src="https://unpkg.com/leaflet-geometryutil@0.9.3/dist/leaflet.geometryutil.min.js"></script>
-
   <!-- (6) html2canvas + jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
@@ -242,7 +238,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Formulaire pour la saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -613,13 +609,40 @@
           value="0.0761"
         />
 
-        <!-- Bouton déclenchant le calcul complet (Recherche S optimal + tableau 20 ans) -->
+        <!-- Bouton déclenchant le calcul complet (Recherche S optimal + tableaux) -->
         <button type="button" id="calculatePreconisation" onclick="findBestPowerByPayback()">
           Calculer la préconisation (Payback min)
         </button>
 
+        <!-- NOUVEAU : Tableau mensuel (année 1) -->
+        <h4 style="margin-top:15px;">Détails par mois (année 1)</h4>
+        <table id="preconisationMonthlyTable">
+          <thead>
+            <tr>
+              <th>Mois</th>
+              <th>Facture Sans PV</th>
+              <th>Économies Autoconso</th>
+              <th>Gains Revente</th>
+              <th>Total Économies</th>
+              <th>Facture Avec PV</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <th>Totaux</th>
+              <td id="monthlyTotalSansPv">-</td>
+              <td id="monthlyTotalAuto">-</td>
+              <td id="monthlyTotalRevente">-</td>
+              <td id="monthlyTotalEconomies">-</td>
+              <td id="monthlyTotalAvecPv">-</td>
+            </tr>
+          </tfoot>
+        </table>
+
         <!-- Tableau sur 20 ans -->
-        <table id="preconisationTable" style="margin-top:15px;">
+        <h4 style="margin-top:15px;">Projection sur 20 ans</h4>
+        <table id="preconisationTable">
           <thead>
             <tr>
               <th>Année</th>
@@ -880,6 +903,7 @@
 
     async function getProductible(lat, lon, aspectValue) {
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
+      // Proxy (selon vos besoins) :
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
         const response = await fetch(proxyUrl);
@@ -1171,48 +1195,35 @@
     function costInstallation(S) {
       // Correction : (S*((1.8093-(0.00659*S)))*1000), arrondi multiple 100
       const raw = S * ((1.8093 - (0.00659 * S))) * 1000;
-      // Arrondi au multiple de 100
       return Math.round(raw / 100) * 100;
     }
 
-    // Calcule le gain annuel (année n°1) pour une puissance S
-    // => Simplification: on somme 12 mois
+    // Calcule le gain annuel (année 1) pour une puissance S (simplifié).
     function computeAnnualGainForPower(S, tarifRachat) {
       let totalGain = 0;
 
-      // Pour chaque mois i=0..11, on récupère:
-      // - la conso en kWh => kwh_i
-      // - le prix au kWh => costKwh_i
-      // - la production pour 1kW => monthlyProductionData[i].E_m
-      // => production(S) = S * E_m
       for (let i = 0; i < 12; i++) {
         const kwhInput = document.getElementById(`kwh_${i}`);
         const costCell = document.getElementById(`costPerKwh_${i}`);
         if (!kwhInput || !costCell || !monthlyProductionData[i]) continue;
 
         const consoKwh = parseFloat(kwhInput.value) || 0;
-        const p_kWh = parseFloat(costCell.textContent) || 0; // ex. "0.15 €", on fait parseFloat
+        const p_kWh = parseFloat(costCell.textContent) || 0; 
+        const E_m1kW = monthlyProductionData[i].E_m; 
+        const production = S * E_m1kW;
 
-        const E_m1kW = monthlyProductionData[i].E_m; // production mensuelle pour 1 kWc
-        const production = S * E_m1kW; // pour S kWc
-
-        // Autoconsommation
         const autoCons = Math.min(consoKwh, production);
-        // Surplus
         const surplus = Math.max(0, production - consoKwh);
 
-        // Gain mensuel = autoCons * prix (p_kWh) + surplus * tarifRachat
         const gainMonth = autoCons * p_kWh + surplus * tarifRachat;
         totalGain += gainMonth;
       }
-
       return totalGain;
     }
 
-    // On cherche la puissance S (1..puissanceMax) minimisant le Payback = Cost / Gains(1)
+    // Recherche S (1..maxPower) qui minimise Payback = Cost / Gains(1)
     function findBestPowerByPayback() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
-      // On prend la puissanceMaxPV comme plafond
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g,"");
       const maxPower = parseFloat(maxPowerStr) || 0;
 
@@ -1225,11 +1236,9 @@
       let bestPayback = Infinity;
       let bestGainYear1 = 0;
 
-      // Test basique : on itère S = 1..maxPower (pas de pas fractionnaire ici)
       for (let s = 1; s <= maxPower; s++) {
         const cost = costInstallation(s);
         const gain1 = computeAnnualGainForPower(s, tarifRachat);
-        // Evite la division par 0
         if (gain1 <= 0) continue;
         const payback = cost / gain1;
         if (payback < bestPayback) {
@@ -1239,112 +1248,141 @@
         }
       }
 
-      // On a bestS => on fait le tableau 20 ans
+      // On a la meilleure puissance => on alimente les 2 tableaux
       calculatePreconisationWithPower(bestS, bestGainYear1);
     }
 
-    // Construit le tableau sur 20 ans, affiche le ROI, etc.
+    // Construit (1) le tableau mensuel (année 1) + (2) le tableau sur 20 ans
     function calculatePreconisationWithPower(S, firstYearGain) {
-      const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
-      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
-
+      // 1) Affichage du coût
       const installationCost = costInstallation(S);
 
-      // On récupère la facture "sans PV" de l'année 1 => ex: totalEuros
-      let baseYearEurosStr = document.getElementById("totalEuros").textContent || "0";
-      baseYearEurosStr = baseYearEurosStr.replace("€","").trim().replace(/\s/g, "").replace(",",".");
-      let baseYearEuros = parseFloat(baseYearEurosStr) || 0;
+      // 2) Tableau mensuel (année 1)
+      fillMonthlyPreconisation(S);
 
-      // On suppose (pour simplifier) qu'en année 1, l'autoconsommation + surplus
-      // rapporte "firstYearGain" (calculé plus haut).
-      // Sur 20 ans, la partie "autoconsommation" augmente avec le prix de l'électricité,
-      // la partie "surplus" reste (souvent) indexée sur le tarif rachat (fixe).
-      // => On sépare :
-      //    gainAutoYear1 = portion autoconsommation
-      //    gainSurplusYear1 = portion surplus
-      //
-      // Pour dev simplifiée, on suppose 80% auto, 20% surplus => (exemple).
-      // Mieux : calculer réellement le ratio dans computeAnnualGainForPower().
+      // 3) Tableau sur 20 ans (en reprenant la même logique que déjà montré)
+      fill20YearsPreconisation(S, firstYearGain, installationCost);
+    }
 
-      // ICI on va essayer de deviner le ratio auto/surplus
-      // => on recalc un total "auto" sur 1 an en fixant le prix kWh = 1 (temp)
-      // => (c'est plus exact de calculer mensuellement, mais simplifions)
-      let sumAuto = 0, sumSurplus = 0;
-      for (let i=0; i<12; i++) {
-        const kwhInput = document.getElementById(`kwh_${i}`);
-        const costCell = document.getElementById(`costPerKwh_${i}`);
-        if (!kwhInput || !costCell || !monthlyProductionData[i]) continue;
+    // Remplit le tableau mensuel #preconisationMonthlyTable sur l'année 1
+    function fillMonthlyPreconisation(S) {
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+      const tableBody = document.querySelector("#preconisationMonthlyTable tbody");
+      tableBody.innerHTML = "";
 
-        const consoKwh = parseFloat(kwhInput.value) || 0;
-        const E_m1kW = monthlyProductionData[i].E_m;
+      let sumSansPv = 0, sumAuto = 0, sumRev = 0, sumEco = 0, sumAvecPv = 0;
+
+      const moisNoms = [
+        "Janvier","Février","Mars","Avril","Mai","Juin",
+        "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+      ];
+
+      for (let i=0; i<12; i++){
+        // Facture sans PV = euros_i
+        const eurosStr = document.getElementById(`euros_${i}`).value || "0";
+        const factureSansPv = parseFloat(eurosStr) || 0;
+
+        // On récupère la conso kWh et le prix unitaire
+        const consoKwh = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
+        const costText = document.getElementById(`costPerKwh_${i}`).textContent || "0";
+        const costUnit = parseFloat(costText) || 0;
+
+        // Production du mois
+        if(!monthlyProductionData[i]) continue;
+        const E_m1kW = monthlyProductionData[i].E_m; 
         const production = S * E_m1kW;
 
+        // Autoconsommation
         const autoCons = Math.min(consoKwh, production);
         const surplus = Math.max(0, production - consoKwh);
 
-        // Gains autoCons * cost + surplus * rachat
-        // => on sépare la partie "auto" (si le kWh = 1 € virtuel)
-        sumAuto += autoCons;    // kWh
-        sumSurplus += surplus; // kWh
+        // Économies = autoCons * costUnit
+        const economies = autoCons * costUnit;
+        // Gains revente = surplus * tarifRachat
+        const revente = surplus * tarifRachat;
+        const totalEco = economies + revente;
+
+        // Facture avec PV = factureSansPv - economies
+        // (car la partie autoconsommée n'est plus achetée)
+        const factureAvecPv = factureSansPv - economies;
+
+        sumSansPv += factureSansPv;
+        sumAuto += economies;
+        sumRev += revente;
+        sumEco += totalEco;
+        sumAvecPv += factureAvecPv;
+
+        // Ajout de la ligne
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${moisNoms[i]}</td>
+          <td>${factureSansPv.toFixed(2)} €</td>
+          <td>${economies.toFixed(2)} €</td>
+          <td>${revente.toFixed(2)} €</td>
+          <td>${totalEco.toFixed(2)} €</td>
+          <td>${factureAvecPv.toFixed(2)} €</td>
+        `;
+        tableBody.appendChild(row);
       }
 
-      const realAutoValue = sumAuto;      // total kWh
-      const realSurplusValue = sumSurplus; // total kWh
+      // Totaux ligne 13
+      document.getElementById("monthlyTotalSansPv").textContent = sumSansPv.toFixed(2) + " €";
+      document.getElementById("monthlyTotalAuto").textContent = sumAuto.toFixed(2) + " €";
+      document.getElementById("monthlyTotalRevente").textContent = sumRev.toFixed(2) + " €";
+      document.getElementById("monthlyTotalEconomies").textContent = sumEco.toFixed(2) + " €";
+      document.getElementById("monthlyTotalAvecPv").textContent = sumAvecPv.toFixed(2) + " €";
+    }
 
-      // Gains tot = realAutoValue * p_kWh + realSurplusValue * tarifRachat
-      // => "firstYearGain" = x + y
-      // => x / firstYearGain => ratio auto, y / firstYearGain => ratio surplus
-      // On l'obtient (approx) :
-      let totalAutoGainIfPrice1 = realAutoValue * 1; // sans la dimension €
-      // Alors le ratio "part auto" = (totalAutoGainIfPrice1 * p_moyen) / firstYearGain ?
-      // On va faire un ratio direct : x = (auto kWh / (auto kWh + surplus kWh)) * firstYearGain
-      let totalKwhAll = realAutoValue + realSurplusValue;
-      let ratioAuto = 0.5; // par défaut
-      if (totalKwhAll>0) {
-        ratioAuto = realAutoValue / totalKwhAll;
-      }
-      let autoPartEuro = firstYearGain * ratioAuto;
-      let surplusPartEuro = firstYearGain - autoPartEuro;
+    // Remplit le tableau sur 20 ans (#preconisationTable)
+    function fill20YearsPreconisation(S, firstYearGain, installationCost){
+      const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
 
-      // OK, on boucle sur 20 ans
+      // On lit la factureSansPv totale de la 1ʳᵉ année (par ex. totalEuros, ou la somme du nouveau tableau)
+      // Ici, on prend la somme "monthlyTotalSansPv"
+      let baseYearStr = document.getElementById("monthlyTotalSansPv").textContent.replace("€","").trim();
+      let baseYearCost = parseFloat(baseYearStr) || 0;
+
+      // On sépare la partie "autoconso" vs "surplus" dans firstYearGain
+      // => on regarde la somme economiesAutoconso & revente (ligne 13 du tableau mensuel)
+      let strEco = document.getElementById("monthlyTotalAuto").textContent.replace("€","").trim();
+      let strRev = document.getElementById("monthlyTotalRevente").textContent.replace("€","").trim();
+      let autoYear1 = parseFloat(strEco) || 0;
+      let surplusYear1 = parseFloat(strRev) || 0;
+
       const preconTableBody = document.querySelector("#preconisationTable tbody");
       preconTableBody.innerHTML = "";
 
       let totalSansPv = 0, totalAuto = 0, totalRev = 0, totalEco = 0, totalAvecPv = 0;
 
-      for (let year = 1; year <= 20; year++) {
-        // Facture sans PV l'année 'year'
-        let factureSansPv = baseYearEuros * Math.pow(1 + annualPriceIncrease/100, (year-1));
-
-        // Gains autoconsommation => la part "autoPartEuro" monte de + annualPriceIncrease
-        let econAuto = autoPartEuro * Math.pow(1 + annualPriceIncrease/100, (year-1));
-        // Gains surplus => la part "surplusPartEuro" (on suppose stable, si rachat inchangé)
-        let gainsSurplus = surplusPartEuro; 
-        // => ou, si le tarif rachat évolue aussi, on peut indexer, c'est un choix.
-
-        let totalEcos = econAuto + gainsSurplus;
-        let factureAvecPv = factureSansPv - econAuto; // on retire la partie autoconsommée
+      for (let year=1; year<=20; year++){
+        // Facture sans PV
+        const factureSansPv = baseYearCost * Math.pow(1 + annualPriceIncrease/100, (year-1));
+        // Part autoconso augmente avec le prix
+        const econAuto = autoYear1 * Math.pow(1 + annualPriceIncrease/100, (year-1));
+        // Gains surplus : on suppose stable (tarif fixe) => on garde surplusYear1
+        const gainsRev = surplusYear1; 
+        const totalEcos = econAuto + gainsRev;
+        const factureAvecPv = factureSansPv - econAuto;
 
         totalSansPv += factureSansPv;
         totalAuto += econAuto;
-        totalRev += gainsSurplus;
+        totalRev += gainsRev;
         totalEco += totalEcos;
         totalAvecPv += factureAvecPv;
 
-        // Alimente la ligne
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${year}</td>
           <td>${factureSansPv.toFixed(2)} €</td>
           <td>${econAuto.toFixed(2)} €</td>
-          <td>${gainsSurplus.toFixed(2)} €</td>
+          <td>${gainsRev.toFixed(2)} €</td>
           <td>${totalEcos.toFixed(2)} €</td>
           <td>${factureAvecPv.toFixed(2)} €</td>
         `;
         preconTableBody.appendChild(row);
       }
 
-      // Totaux
       document.getElementById("totalSansPv").textContent = totalSansPv.toFixed(2) + " €";
       document.getElementById("totalAuto").textContent = totalAuto.toFixed(2) + " €";
       document.getElementById("totalRevente").textContent = totalRev.toFixed(2) + " €";
@@ -1355,13 +1393,11 @@
       document.getElementById("puissanceReco").textContent = S.toLocaleString('fr-FR');
       document.getElementById("coutInstallation").textContent = installationCost.toLocaleString('fr-FR');
       document.getElementById("gainSansInv").textContent = totalEco.toFixed(2) + " €";
-
       let gainAvecInvVal = totalEco - installationCost;
       document.getElementById("gainAvecInv").textContent = gainAvecInvVal.toFixed(2) + " €";
 
-      // ROI
-      // "bestPayback" a déjà été calculé => on peut le recalc ici :
-      let payback = installationCost / firstYearGain;
+      // ROI => cost / firstYearGain
+      let payback = installationCost / (firstYearGain || 1);
       document.getElementById("roiResult").textContent = payback.toFixed(1);
     }
   </script>
