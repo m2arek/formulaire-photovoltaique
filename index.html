@@ -238,7 +238,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">*Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -609,6 +609,12 @@
           value="0.0761"
         />
 
+        <!-- Case à cocher "Kwh visible" -->
+        <label>
+          <input type="checkbox" id="showKwhColumns" name="showKwhColumns" />
+          Kwh visible
+        </label>
+
         <!-- Bouton déclenchant le calcul complet (Recherche S optimal + tableaux) -->
         <button type="button" id="calculatePreconisation" onclick="findBestPowerByPayback()">
           Calculer la préconisation (Payback min)
@@ -617,28 +623,7 @@
         <!-- Tableau mensuel (année 1) -->
         <h4 style="margin-top:15px;">Détails par mois (année 1)</h4>
         <table id="preconisationMonthlyTable">
-          <thead>
-            <tr>
-              <th>Mois</th>
-              <th>Facture Sans PV</th>
-              <th>Économies Autoconso</th>
-              <th>Gains Revente</th>
-              <!-- Inversé : 5ᵉ = Facture Avec PV, 6ᵉ = Total Économies -->
-              <th>Facture Avec PV</th>
-              <th>Total Économies</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr>
-              <th>Totaux</th>
-              <td id="monthlyTotalSansPv">-</td>
-              <td id="monthlyTotalAuto">-</td>
-              <td id="monthlyTotalRevente">-</td>
-              <td id="monthlyTotalAvecPv">-</td>
-              <td id="monthlyTotalEconomies">-</td>
-            </tr>
-          </tfoot>
+          <!-- L'entête, le corps et le pied seront générés dynamiquement dans fillMonthlyPreconisation() -->
         </table>
 
         <!-- Tableau sur 20 ans -->
@@ -650,7 +635,7 @@
               <th>Facture Sans PV</th>
               <th>Économies Autoconso</th>
               <th>Gains Revente</th>
-              <!-- Inversé : 5ᵉ = Facture Avec PV, 6ᵉ = Total Économies -->
+              <!-- 5ᵉ = Facture Avec PV, 6ᵉ = Total Économies -->
               <th>Facture Avec PV</th>
               <th>Total Économies</th>
             </tr>
@@ -905,7 +890,6 @@
 
     async function getProductible(lat, lon, aspectValue) {
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
-      // Proxy si nécessaire :
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
         const response = await fetch(proxyUrl);
@@ -1190,20 +1174,18 @@
     });
 
     /***************************************************
-     * (NOUVEAU) 6) CALCUL DU COÛT + OPTIMISATION PAR PAYBACK
+     * 6) CALCUL DU COÛT + OPTIMISATION PAR PAYBACK
      ***************************************************/
 
     // Formule arrondie au multiple de 100, ex: S=60 => 84800 €
     function costInstallation(S) {
-      // (S*((1.8093 - (0.00659*S)))*1000), arrondi multiple 100
       const raw = S * ((1.8093 - (0.00659 * S))) * 1000;
       return Math.round(raw / 100) * 100;
     }
 
-    // Calcule le gain annuel (année 1) pour une puissance S (simplifié).
+    // Calcule le gain annuel (année 1) pour la puissance S, simplifié
     function computeAnnualGainForPower(S, tarifRachat) {
       let totalGain = 0;
-
       for (let i = 0; i < 12; i++) {
         const kwhInput = document.getElementById(`kwh_${i}`);
         const costCell = document.getElementById(`costPerKwh_${i}`);
@@ -1211,24 +1193,22 @@
 
         const consoKwh = parseFloat(kwhInput.value) || 0;
         const p_kWh = parseFloat(costCell.textContent) || 0; 
-        const E_m1kW = monthlyProductionData[i].E_m; 
+        const E_m1kW = monthlyProductionData[i].E_m;
         const production = S * E_m1kW;
 
         const autoCons = Math.min(consoKwh, production);
         const surplus = Math.max(0, production - consoKwh);
 
-        const gainMonth = autoCons * p_kWh + surplus * tarifRachat;
-        totalGain += gainMonth;
+        totalGain += autoCons * p_kWh + surplus * tarifRachat;
       }
       return totalGain;
     }
 
-    // Recherche S (1..maxPower) minimisant Payback = Cost / Gains(1)
+    // Cherche la puissance S minimisant le payback
     function findBestPowerByPayback() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g,"");
       const maxPower = parseFloat(maxPowerStr) || 0;
-
       if (maxPower <= 0) {
         alert("Puissance max PV non définie ou nulle.");
         return;
@@ -1250,27 +1230,64 @@
         }
       }
 
-      // On a la meilleure puissance => on alimente les 2 tableaux
+      // On remplit les tableaux
       calculatePreconisationWithPower(bestS, bestGainYear1);
     }
 
-    // Construit (1) le tableau mensuel (année 1) + (2) le tableau sur 20 ans
     function calculatePreconisationWithPower(S, firstYearGain) {
       const installationCost = costInstallation(S);
-
-      // (1) Tableau mensuel
       fillMonthlyPreconisation(S);
-      // (2) Tableau sur 20 ans
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    // Remplit le tableau mensuel #preconisationMonthlyTable sur l'année 1
+    // Construit le tableau mensuel (année 1) en tenant compte de "Kwh visible"
     function fillMonthlyPreconisation(S) {
+      const showKwh = document.getElementById("showKwhColumns").checked;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
-      const tableBody = document.querySelector("#preconisationMonthlyTable tbody");
-      tableBody.innerHTML = "";
+      const table = document.getElementById("preconisationMonthlyTable");
 
+      // Reconstruit entièrement l'architecture du tableau
+      table.innerHTML = "";
+
+      // 1) THEAD
+      const thead = document.createElement("thead");
+      let headerRow = `<tr>
+        <th>Mois</th>
+        ${ showKwh ? '<th>Conso kWh</th>' : '' }
+        <th>Facture Sans PV</th>
+        ${ showKwh ? '<th>Autoconso kWh</th>' : '' }
+        <th>Économies Autoconso</th>
+        ${ showKwh ? '<th>Revente kWh</th>' : '' }
+        <th>Gains Revente</th>
+        <th>Facture Avec PV</th>
+        <th>Total Économies</th>
+      </tr>`;
+      thead.innerHTML = headerRow;
+      table.appendChild(thead);
+
+      // 2) TBODY
+      const tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+      // 3) TFOOT
+      const tfoot = document.createElement("tfoot");
+      let footRow = `<tr>
+        <th>Totaux</th>
+        ${ showKwh ? '<td id="monthlySumKwhConso">-</td>' : '' }
+        <td id="monthlyTotalSansPv">-</td>
+        ${ showKwh ? '<td id="monthlySumKwhAuto">-</td>' : '' }
+        <td id="monthlyTotalAuto">-</td>
+        ${ showKwh ? '<td id="monthlySumKwhRevente">-</td>' : '' }
+        <td id="monthlyTotalRevente">-</td>
+        <td id="monthlyTotalAvecPv">-</td>
+        <td id="monthlyTotalEconomies">-</td>
+      </tr>`;
+      tfoot.innerHTML = footRow;
+      table.appendChild(tfoot);
+
+      // Variables de cumul
       let sumSansPv = 0, sumAuto = 0, sumRev = 0, sumAvecPv = 0, sumEco = 0;
+      let sumKwhConso = 0, sumKwhAuto = 0, sumKwhRev = 0;
 
       const moisNoms = [
         "Janvier","Février","Mars","Avril","Mai","Juin",
@@ -1278,9 +1295,11 @@
       ];
 
       for (let i=0; i<12; i++){
+        // Facture sans PV
         const eurosStr = document.getElementById(`euros_${i}`).value || "0";
         const factureSansPv = parseFloat(eurosStr) || 0;
 
+        // conso en kWh
         const consoKwh = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
         const costText = document.getElementById(`costPerKwh_${i}`).textContent || "0";
         const costUnit = parseFloat(costText) || 0;
@@ -1295,8 +1314,6 @@
         const economies = autoCons * costUnit;
         const revente = surplus * tarifRachat;
         const totalEco = economies + revente;
-
-        // Facture avec PV
         const factureAvecPv = factureSansPv - economies;
 
         sumSansPv += factureSansPv;
@@ -1305,27 +1322,58 @@
         sumAvecPv += factureAvecPv;
         sumEco += totalEco;
 
-        // IMPORTANT : ordre des colonnes => FactureAvecPv (5ᵉ), TotalEco (6ᵉ)
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${moisNoms[i]}</td>
-          <td>${factureSansPv.toFixed(2)} €</td>
-          <td>${economies.toFixed(2)} €</td>
-          <td>${revente.toFixed(2)} €</td>
-          <td>${factureAvecPv.toFixed(2)} €</td>
-          <td>${totalEco.toFixed(2)} €</td>
-        `;
-        tableBody.appendChild(row);
+        // kWh cumul
+        sumKwhConso += consoKwh;
+        sumKwhAuto += autoCons;
+        sumKwhRev += surplus;
+
+        // Construction dynamique de la ligne
+        let row = document.createElement("tr");
+
+        // Mois
+        let rowHTML = `<td>${moisNoms[i]}</td>`;
+        // Conso kWh (facultatif)
+        if (showKwh) {
+          rowHTML += `<td>${consoKwh.toFixed(1)}</td>`;
+        }
+        // Facture Sans PV
+        rowHTML += `<td>${factureSansPv.toFixed(2)} €</td>`;
+        // Autoconso kWh (facultatif)
+        if (showKwh) {
+          rowHTML += `<td>${autoCons.toFixed(1)}</td>`;
+        }
+        // Économies Autoconso
+        rowHTML += `<td>${economies.toFixed(2)} €</td>`;
+        // Revente kWh (facultatif)
+        if (showKwh) {
+          rowHTML += `<td>${surplus.toFixed(1)}</td>`;
+        }
+        // Gains Revente
+        rowHTML += `<td>${revente.toFixed(2)} €</td>`;
+        // Facture Avec PV
+        rowHTML += `<td>${factureAvecPv.toFixed(2)} €</td>`;
+        // Total Économies
+        rowHTML += `<td>${totalEco.toFixed(2)} €</td>`;
+
+        row.innerHTML = rowHTML;
+        tbody.appendChild(row);
       }
 
+      // MAJ du tfoot
       document.getElementById("monthlyTotalSansPv").textContent = sumSansPv.toFixed(2) + " €";
       document.getElementById("monthlyTotalAuto").textContent = sumAuto.toFixed(2) + " €";
       document.getElementById("monthlyTotalRevente").textContent = sumRev.toFixed(2) + " €";
       document.getElementById("monthlyTotalAvecPv").textContent = sumAvecPv.toFixed(2) + " €";
       document.getElementById("monthlyTotalEconomies").textContent = sumEco.toFixed(2) + " €";
+
+      if (showKwh) {
+        document.getElementById("monthlySumKwhConso").textContent = sumKwhConso.toFixed(1);
+        document.getElementById("monthlySumKwhAuto").textContent = sumKwhAuto.toFixed(1);
+        document.getElementById("monthlySumKwhRevente").textContent = sumKwhRev.toFixed(1);
+      }
     }
 
-    // Remplit le tableau sur 20 ans (#preconisationTable)
+    // Remplit le tableau sur 20 ans
     function fill20YearsPreconisation(S, firstYearGain, installationCost){
       const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1358,7 +1406,6 @@
         totalAvecPv += factureAvecPv;
         totalEco += totalEcos;
 
-        // IMPORTANT : ordre => 5ᵉ = factureAvecPv, 6ᵉ = totalEcos
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${year}</td>
