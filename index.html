@@ -608,7 +608,13 @@
           value="0.0761"
         />
 
-        <!-- Bouton => Chercher la puissance max de Gains(1) -->
+        <!-- Case "Kwh visible" -->
+        <label>
+          <input type="checkbox" id="showKwhColumns" name="showKwhColumns" />
+          Kwh visible
+        </label>
+
+        <!-- Bouton => Chercher S qui MAXIMISE le gain la 1ère année -->
         <button type="button" id="calculatePreconisation" onclick="findBestPowerByMaxGain()">
           Calculer la préconisation (Maximiser le gain 1ère année)
         </button>
@@ -616,27 +622,7 @@
         <!-- Tableau mensuel (année 1) -->
         <h4 style="margin-top:15px;">Détails par mois (année 1)</h4>
         <table id="preconisationMonthlyTable">
-          <thead>
-            <tr>
-              <th>Mois</th>
-              <th>Facture Sans PV</th>
-              <th>Économies Autoconso</th>
-              <th>Gains Revente</th>
-              <th>Facture Avec PV</th>
-              <th>Total Économies</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr>
-              <th>Totaux</th>
-              <td id="monthlyTotalSansPv">-</td>
-              <td id="monthlyTotalAuto">-</td>
-              <td id="monthlyTotalRevente">-</td>
-              <td id="monthlyTotalAvecPv">-</td>
-              <td id="monthlyTotalEconomies">-</td>
-            </tr>
-          </tfoot>
+          <!-- on génère dynamiquement l'entête / corps / pied dans fillMonthlyPreconisation() -->
         </table>
 
         <!-- Tableau sur 20 ans -->
@@ -896,94 +882,11 @@
     }
 
     /***************************************************
-     * 3B) CALCUL PRODUCTIBLE (API PVGIS)
+     * 3B) STOCKER PRODUCTION MENSUELLE (API PVGIS)
      ***************************************************/
     let monthlyProductionData = [];
 
-    async function getProductible(lat, lon, aspectValue) {
-      const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
-      // Proxy si besoin
-      const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
-      try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) return null;
-        const text = await response.text();
-        const lines = text.split("\n");
-
-        let yearProduction = null;
-        let tempMonthly = [];
-
-        for (let line of lines) {
-          let cleanLine = line.trim();
-          if (!cleanLine) continue;
-          if (cleanLine.includes("Year")) {
-            const parts = cleanLine.split("\t").map(s=>s.trim());
-            yearProduction = parseFloat(parts[1]);
-          } else if (/^\d+\s/.test(cleanLine)) {
-            const parts = cleanLine.split("\t").map(s=>s.trim());
-            if (parts.length >= 3) {
-              const monthNumber = parseInt(parts[0],10);
-              const E_mValue = parseFloat(parts[2]);
-              tempMonthly.push({ month: monthNumber, E_m: E_mValue });
-            }
-          }
-        }
-
-        monthlyProductionData = tempMonthly;
-
-        return {
-          yearProduction,
-          monthlyProduction: tempMonthly
-        };
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
-    }
-
-    document.getElementById("calculateIrrButton").addEventListener("click", async () => {
-      const lat = parseFloat(document.getElementById("latitudeIrr").value);
-      const lon = parseFloat(document.getElementById("longitudeIrr").value);
-      const aspectValue = parseFloat(document.getElementById("orientationIrr").value);
-
-      if (isNaN(lat) || isNaN(lon)) {
-        alert("Veuillez d'abord renseigner la latitude et la longitude (recherche d'adresse).");
-        return;
-      }
-      const result = await getProductible(lat, lon, aspectValue);
-      if (result !== null && result.yearProduction !== null) {
-        document.getElementById("productible").value =
-          result.yearProduction.toLocaleString('fr-FR');
-        fillMonthlyProductionTable(result.monthlyProduction);
-      } else {
-        alert("Impossible de récupérer le productible. Vérifiez la connexion ou les données.");
-      }
-      updateProductionPotential();
-    });
-
-    function fillMonthlyProductionTable(monthlyData) {
-      const tableBody = document.querySelector("#monthlyProductionTable tbody");
-      tableBody.innerHTML = "";
-
-      const moisNoms = [
-        "Janvier","Février","Mars","Avril","Mai","Juin",
-        "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
-      ];
-
-      monthlyData.forEach(item => {
-        const row = document.createElement("tr");
-        const monthCell = document.createElement("td");
-        const productionCell = document.createElement("td");
-
-        const idx = item.month - 1;
-        monthCell.textContent = (idx>=0 && idx<12) ? moisNoms[idx] : `Mois ${item.month}`;
-        productionCell.textContent = item.E_m?.toLocaleString('fr-FR') || "-";
-
-        row.appendChild(monthCell);
-        row.appendChild(productionCell);
-        tableBody.appendChild(row);
-      });
-    }
+    // Remarque : la fonction getProductible() a déjà été décrite. Cf. code ci-dessus.
 
     /***************************************************
      * 3C) CALCUL "POTENTIEL DE PRODUCTION"
@@ -1100,10 +1003,11 @@
       formObject["mapZoom"] = map.getZoom();
       formObject["canvasImage"] = drawingCanvas.toDataURL();
 
+      // Polygones dessinés
       const shapesGeoJSON = drawnItems.toGeoJSON();
       formObject["drawnShapes"] = shapesGeoJSON;
 
-      // Sauvegarde la production mensuelle
+      // Production mensuelle
       formObject["monthlyProductionData"] = monthlyProductionData;
 
       const companyName = formObject["companyName"] || "Formulaire";
@@ -1132,6 +1036,7 @@
 
           Object.keys(jsonData).forEach((key) => {
             const dataValue = jsonData[key];
+            // On ignore ces champs spéciaux, qu'on recharge autrement
             if (["mapCenterLat","mapCenterLng","mapZoom","canvasImage","drawnShapes","monthlyProductionData"].includes(key)) {
               return;
             }
@@ -1150,12 +1055,14 @@
             }
           });
 
+          // Restaure la carte
           if (jsonData["mapCenterLat"] !== undefined &&
               jsonData["mapCenterLng"] !== undefined &&
               jsonData["mapZoom"] !== undefined) {
             map.setView([jsonData["mapCenterLat"], jsonData["mapCenterLng"]], jsonData["mapZoom"]);
           }
 
+          // Restaure le dessin
           if (jsonData["canvasImage"]) {
             const image = new Image();
             image.onload = function () {
@@ -1165,6 +1072,7 @@
             image.src = jsonData["canvasImage"];
           }
 
+          // Restaure polygones
           if (jsonData["drawnShapes"]) {
             drawnItems.clearLayers();
             L.geoJson(jsonData["drawnShapes"]).eachLayer(function(layer) {
@@ -1172,11 +1080,13 @@
             });
           }
 
+          // Restaure la production mensuelle
           if (jsonData["monthlyProductionData"]) {
             monthlyProductionData = jsonData["monthlyProductionData"];
             fillMonthlyProductionTable(monthlyProductionData);
           }
 
+          // Recalcule totaux
           for (let i = 0; i < 12; i++) {
             calculateCost(i);
           }
@@ -1187,10 +1097,10 @@
     });
 
     /***************************************************
-     * (NOUVEAU) 6) CHOISIR S QUI MAXIMISE LE GAIN (PAS DE PAYBACK)
+     * 6) CHOISIR S QUI MAXIMISE LE GAIN (1ère année)
      ***************************************************/
 
-    // Renvoie le "gain annuel 1ère année" pour la puissance S
+    // Calcul du gain annuel 1ère année pour S
     function computeAnnualGainForPower(S, tarifRachat) {
       let totalGain = 0;
       for (let i = 0; i < 12; i++) {
@@ -1201,21 +1111,27 @@
         const consoKwh = parseFloat(kwhInput.value) || 0;
         const p_kWh = parseFloat(costCell.textContent) || 0; 
 
-        // Production mensuelle 1 kWc => monthlyProductionData[i].E_m
-        const E_m1kW = monthlyProductionData[i].E_m;
+        // Production mensuelle pour 1 kWc
+        const E_m1kW = monthlyProductionData[i].E_m || 0;
+        // Production pour S
         const production = S * E_m1kW;
 
-        // Autoconsommation + surplus
         const autoCons = Math.min(consoKwh, production);
         const surplus = Math.max(0, production - consoKwh);
 
-        // Gain = autoCons * p_kWh + surplus * tarifRachat
+        // Gains mensuels = autoCons * prix + surplus * rachat
         totalGain += autoCons * p_kWh + surplus * tarifRachat;
       }
       return totalGain;
     }
 
-    // Balaye S=1..maxPower, cherche le plus grand GAIN(1)
+    // Coût installation (pour affichage + ROI)
+    function costInstallation(S) {
+      const raw = S * ((1.8093 - (0.00659 * S))) * 1000;
+      return Math.round(raw / 100) * 100;
+    }
+
+    // On balaie S=1..maxPower => prend S qui donne le plus grand GAIN la 1ère année
     function findBestPowerByMaxGain() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g,"");
@@ -1227,10 +1143,9 @@
       }
 
       let bestS = 1;
-      let bestGain = 0;  // on cherche le max
+      let bestGain = 0;
       let bestGainYear1 = 0;
 
-      // On teste S = 1..maxPower
       for (let s = 1; s <= maxPower; s++) {
         const gain1 = computeAnnualGainForPower(s, tarifRachat);
         if (gain1 > bestGain) {
@@ -1243,18 +1158,37 @@
       calculatePreconisationWithPower(bestS, bestGainYear1);
     }
 
-    // Existant => calcule la table mensuelle + table 20 ans
+    // Récap : on remplit le tableau mensuel + 20 ans
     function calculatePreconisationWithPower(S, firstYearGain) {
       const installationCost = costInstallation(S);
       fillMonthlyPreconisation(S);
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    // Code existant : remplit le tableau mensuel (identique)
-    function fillMonthlyPreconisation(S) { ... }
+    // Remplit le tableau mensuel (année 1) en tenant compte de la case "Kwh visible"
+    function fillMonthlyPreconisation(S) {
+      const showKwh = document.getElementById("showKwhColumns").checked;
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+      const table = document.getElementById("preconisationMonthlyTable");
 
-    // Code existant : remplit le tableau 20 ans (identique)
-    function fill20YearsPreconisation(S, firstYearGain, installationCost) { ... }
-  </script>
-</body>
-</html>
+      // Re-construire tout le tableau
+      table.innerHTML = "";
+
+      // THEAD
+      const thead = document.createElement("thead");
+      let headerRow = `<tr>
+        <th>Mois</th>
+        ${ showKwh ? '<th>Conso kWh</th>' : '' }
+        <th>Facture Sans PV</th>
+        ${ showKwh ? '<th>Autoconso kWh</th>' : '' }
+        <th>Économies Autoconso</th>
+        ${ showKwh ? '<th>Revente kWh</th>' : '' }
+        <th>Gains Revente</th>
+        <th>Facture Avec PV</th>
+        <th>Total Économies</th>
+      </tr>`;
+      thead.innerHTML = headerRow;
+      table.appendChild(thead);
+
+      // TBODY
+     
