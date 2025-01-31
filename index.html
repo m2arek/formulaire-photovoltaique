@@ -1172,74 +1172,111 @@
         reader.readAsText(file);
       }
     });
-
-    /***************************************************
+/***************************************************
  * 6) CALCUL DU COÛT + OPTIMISATION PAR GAIN
+ *  (NOUVELLE CONTRAINTE : max autoConso, min revente)
  ***************************************************/
 
-// Formule arrondie au multiple de 100, ex: S=60 => 84800 €
+// (6.1) Coût d’installation (inchangé)
 function costInstallation(S) {
+  // Formule arrondie au multiple de 100, ex: S=60 => 84800 €
   const raw = S * ((1.8093 - (0.00659 * S))) * 1000;
   return Math.round(raw / 100) * 100;
 }
 
-// Calcule le gain annuel (année 1) pour la puissance S, simplifié
-function computeAnnualGainForPower(S, tarifRachat) {
-  let totalGain = 0;
+// (6.2) Calcule autoConsoGain & surplusGain & totalGain pour la puissance S
+function computeAutoAndSurplusForPower(S, tarifRachat) {
+  let autoConsoGain = 0;
+  let surplusGain = 0;
+
   for (let i = 0; i < 12; i++) {
     const kwhInput = document.getElementById(`kwh_${i}`);
     const costCell = document.getElementById(`costPerKwh_${i}`);
     if (!kwhInput || !costCell || !monthlyProductionData[i]) continue;
 
     const consoKwh = parseFloat(kwhInput.value) || 0;
-    const p_kWh = parseFloat(costCell.textContent) || 0; 
+    const p_kWh = parseFloat(costCell.textContent) || 0;
     const E_m1kW = monthlyProductionData[i].E_m;
     const production = S * E_m1kW;
 
     const autoCons = Math.min(consoKwh, production);
     const surplus = Math.max(0, production - consoKwh);
 
-    totalGain += autoCons * p_kWh + surplus * tarifRachat;
+    autoConsoGain += autoCons * p_kWh;
+    surplusGain   += surplus * tarifRachat;
   }
-  return totalGain;
+
+  return {
+    autoConsoGain,
+    surplusGain,
+    totalGain: autoConsoGain + surplusGain
+  };
 }
 
-// (MODIFIÉ) - On CHERCHE LA PUISSANCE S QUI MAXIMISE LE GAIN ANNUEL
+// (6.3) Recherche de la puissance S qui maximise l'autoconsommation,
+//       minimise la revente, et en dernier lieu maximise le total.
 function findBestPowerByPayback() {
+  // On lit le tarif rachat et la puissance max
   const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
-  let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g,"");
+  let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g, "");
   const maxPower = parseFloat(maxPowerStr) || 0;
+
   if (maxPower <= 0) {
     alert("Puissance max PV non définie ou nulle.");
     return;
   }
 
   let bestS = 1;
-  let bestGain = 0;      // <== On va comparer le gain
-  let bestGainYear1 = 0; // <== On stocke le gain1 du S "optimal"
+  // On mémorise les 3 critères pour le "meilleur" S
+  let bestAutoConsoGain = 0;
+  let bestSurplusGain   = Infinity;
+  let bestTotalGain     = 0;
 
-  // On balaie S de 1 à maxPower
+  // On balaie s = 1..maxPower
   for (let s = 1; s <= maxPower; s++) {
-    // const cost = costInstallation(s); // on peut le calculer si besoin pour afficher ou log
-    const gain1 = computeAnnualGainForPower(s, tarifRachat);
-    if (gain1 > bestGain) {
-      bestGain = gain1;
+    const { autoConsoGain, surplusGain, totalGain } =
+      computeAutoAndSurplusForPower(s, tarifRachat);
+
+    // Critère 1 : autoConsoGain > bestAutoConsoGain
+    if (autoConsoGain > bestAutoConsoGain) {
       bestS = s;
-      bestGainYear1 = gain1;
+      bestAutoConsoGain = autoConsoGain;
+      bestSurplusGain   = surplusGain;
+      bestTotalGain     = totalGain;
+    }
+    else if (autoConsoGain === bestAutoConsoGain) {
+      // Critère 2 : surplusGain < bestSurplusGain
+      if (surplusGain < bestSurplusGain) {
+        bestS = s;
+        bestSurplusGain   = surplusGain;
+        bestTotalGain     = totalGain;
+        // on ne touche pas bestAutoConsoGain
+      }
+      else if (surplusGain === bestSurplusGain) {
+        // Critère 3 : totalGain > bestTotalGain
+        if (totalGain > bestTotalGain) {
+          bestS = s;
+          bestTotalGain = totalGain;
+          // autoConsoGain & surplusGain inchangés
+        }
+      }
     }
   }
 
-  // On "remplit" les tableaux de résultats
-  calculatePreconisationWithPower(bestS, bestGainYear1);
+  // On a maintenant la puissance S qui répond à ces 3 critères
+  const bestVals = computeAutoAndSurplusForPower(bestS, tarifRachat);
+  calculatePreconisationWithPower(bestS, bestVals.totalGain);
 }
 
+// (6.4) Calcule la préconisation avec la puissance S retenue
 function calculatePreconisationWithPower(S, firstYearGain) {
   const installationCost = costInstallation(S);
   fillMonthlyPreconisation(S);
   fill20YearsPreconisation(S, firstYearGain, installationCost);
 }
 
-// Construit le tableau mensuel (année 1) en tenant compte de "Kwh visible"
+// (6.5) Construit le tableau mensuel (année 1)
+//       (inchangé)
 function fillMonthlyPreconisation(S) {
   const showKwh = document.getElementById("showKwhColumns").checked;
   const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1372,7 +1409,7 @@ function fillMonthlyPreconisation(S) {
   }
 }
 
-// Remplit le tableau sur 20 ans
+// (6.6) Remplit le tableau sur 20 ans (inchangé)
 function fill20YearsPreconisation(S, firstYearGain, installationCost){
   const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
   const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1395,7 +1432,7 @@ function fill20YearsPreconisation(S, firstYearGain, installationCost){
   for (let year=1; year<=20; year++){
     const factureSansPv = baseYearCost * Math.pow(1 + annualPriceIncrease/100, (year-1));
     const econAuto = autoYear1 * Math.pow(1 + annualPriceIncrease/100, (year-1));
-    const gainsRev = surplusYear1; 
+    const gainsRev = surplusYear1;
     const totalEcos = econAuto + gainsRev;
     const factureAvecPv = factureSansPv - econAuto;
 
@@ -1434,6 +1471,8 @@ function fill20YearsPreconisation(S, firstYearGain, installationCost){
   let payback = installationCost / (firstYearGain || 1);
   document.getElementById("roiResult").textContent = payback.toFixed(1);
 }
+
+  
 
   </script>
 </body>
