@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -148,7 +147,19 @@
         <label for="longitudeIrr">Longitude :</label>
         <input type="text" id="longitudeIrr" name="longitudeIrr" readonly />
 
+        <!-- Ancien select Orientation -->
+        <label for="orientationIrr">Orientation (défaut) :</label>
+        <select id="orientationIrr" name="orientationIrr">
+          <option value="0">SUD (0°)</option>
+          <option value="-90">EST (-90°)</option>
+          <option value="90">OUEST (90°)</option>
+          <option value="-45">SUD-EST (-45°)</option>
+          <option value="45">SUD-OUEST (45°)</option>
+        </select>
 
+        <!-- NOUVEAU CHAMP orientation (vrai angle) -->
+        <label for="orientation">Orientation (vrai angle °) :</label>
+        <input type="text" id="orientation" name="orientation" readonly />
 
         <label for="productible">Productible :</label>
         <input type="text" id="productible" name="productible" placeholder="kWh/kWc/an" readonly/>
@@ -671,6 +682,7 @@
       return (brng + 360) % 360;
     }
 
+    // Ancienne version mapAngleToAspect: on la laisse, non modifiée.
     function mapAngleToAspect(angle) {
       const targets = [
         { label: "SUD", deg: 180, aspect: 0 },
@@ -708,28 +720,33 @@
 
         updateProductionPotential();
       } else if (e.layerType === "polyline") {
-  const latLngs = layer.getLatLngs();
-  if (latLngs.length < 2) {
-    alert("Tracez au moins 2 points pour la ligne d'orientation.");
-    return;
-  }
-  const first = latLngs[0];
-  const last = latLngs[latLngs.length - 1];
+        const latLngs = layer.getLatLngs();
+        if (latLngs.length < 2) {
+          alert("Tracez au moins 2 points pour la ligne d'orientation.");
+          return;
+        }
+        const first = latLngs[0];
+        const last = latLngs[latLngs.length - 1];
 
-  // 1) angle = 0..360 (bearing par rapport au nord)
-  const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
+        // 1) angle = 0..360 (bearing par rapport au nord)
+        const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
 
-  // 2) Convertir en aspect = 0 => sud, + ou - => ouest/est
-  let aspectVal = angle - 180;
-  // Normalisation dans [-180..180)
-  aspectVal = (aspectVal + 180 + 360) % 360 - 180;
+        // 2) Convertir en aspect = 0 => sud, + ou - => ouest/est
+        let aspectVal = angle - 180;
+        // Normalisation dans [-180..180)
+        aspectVal = (aspectVal + 180 + 360) % 360 - 180;
 
-  document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
-  alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
+        // On met quand même dans "orientationIrr"
+        document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
 
-  // En option, on retire la polyline si vous le souhaitez
-  drawnItems.removeLayer(layer);
-}
+        // NOUVEAU : recopier dans "orientation"
+        document.getElementById("orientation").value = aspectVal.toFixed(1);
+
+        alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
+
+        // En option, on retire la polyline
+        drawnItems.removeLayer(layer);
+      }
     });
 
     /***************************************************
@@ -771,6 +788,9 @@
     let monthlyProductionData = [];
 
     async function getProductible(lat, lon, aspectValue) {
+      // On lit aspectValue = parseFloat(document.getElementById("orientation").value);
+      // SI vous voulez exploiter la "vraie" orientation
+      // autrement, aspectValue reste orientationIrr
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
@@ -813,7 +833,8 @@
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
-      const aspectValue = parseFloat(document.getElementById("orientationIrr").value);
+      // CHANGEMENT : on lit la "vraie" orientation du champ "orientation"
+      const aspectValue = parseFloat(document.getElementById("orientation").value);
 
       if (isNaN(lat) || isNaN(lon)) {
         alert("Veuillez d'abord renseigner la latitude et la longitude (recherche d'adresse).");
@@ -1105,6 +1126,7 @@
     // 6.3) Recherche S => max autoConso, min revente, max total
     function findBestPowerByPayback() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+      // ICI : on lit le champ "orientation" au lieu du select
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g, "");
       const maxPower = parseFloat(maxPowerStr) || 0;
       if (maxPower <= 0) {
