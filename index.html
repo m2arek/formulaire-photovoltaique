@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -21,9 +22,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 
   <style>
-    /* ------------------------------
-       Styles généraux & Layout
-    ------------------------------- */
+    /* Styles généraux, carte, formulaires, etc. */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -42,12 +41,7 @@
     .page-title {
       text-align: center;
       margin-bottom: 30px;
-      color: #444;
     }
-
-    /* ------------------------------
-       Formulaires & sections
-    ------------------------------- */
     form {
       display: flex;
       flex-direction: column;
@@ -56,75 +50,15 @@
     }
     .form-section {
       background-color: #fafafa;
-      padding: 15px 20px;
+      padding: 15px;
       border-radius: 5px;
       border: 1px solid #ddd;
-      margin-bottom: 15px;
     }
-    .form-section h3 {
-      margin-top: 0;
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 10px;
-    }
-    label {
-      font-weight: 500;
-      margin-top: 10px;
-      display: block;
-    }
-    input[type="text"],
-    input[type="number"],
-    input[type="time"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      margin-top: 5px;
-    }
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #999;
-    }
-
-    /* ------------------------------
-       Boutons
-    ------------------------------- */
-    button {
-      display: inline-block;
-      padding: 10px 15px;
-      font-size: 14px;
-      border: none;
-      border-radius: 4px;
-      background-color: #3498db;
-      color: #fff;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin-right: 5px;
-      margin-bottom: 5px;
-    }
-    button:hover {
-      background-color: #247ba0;
-    }
-    #toggleDrawingButton {
-      float: right;
-    }
-
-    /* ------------------------------
-       Tables
-    ------------------------------- */
     table {
       border: 1px solid #ddd;
       border-collapse: collapse;
       width: 100%;
       text-align: center;
-      margin-top: 10px;
     }
     table th, table td {
       padding: 8px;
@@ -134,14 +68,6 @@
     table thead {
       background-color: #f0f0f0;
     }
-    /* Survol de ligne */
-    table tbody tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    /* ------------------------------
-       Section carte
-    ------------------------------- */
     #map-container {
       position: relative;
       width: 100%;
@@ -157,57 +83,35 @@
     }
     #drawingCanvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 1000;
       pointer-events: none;
     }
-    .leaflet-draw {
-      z-index: 1500 !important;
+    #toggleDrawingButton {
+      float: right;
     }
-
-    /* ------------------------------
-       Divers
-    ------------------------------- */
-    .checkbox-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 5px 10px;
-      margin-top: 5px;
-    }
-    .checkbox-grid label {
-      display: flex;
-      align-items: center;
-      font-weight: normal;
-      background: #fff;
-      padding: 5px 8px;
+    button {
+      display: inline-block;
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
       border-radius: 4px;
-      border: 1px solid #ccc;
+      background-color: #3498db;
+      color: #fff;
       cursor: pointer;
+      margin-right: 5px;
       margin-bottom: 5px;
     }
-    .checkbox-grid input[type="checkbox"] {
-      margin-right: 6px;
-    }
-
-    /* (Responsivité) */
-    @media (max-width: 768px) {
-      #toggleDrawingButton {
-        float: none;
-        margin-top: 10px;
-      }
-      .checkbox-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      }
+    button:hover {
+      background-color: #2980b9;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour saisie données FRH PROv1</h1>
+    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -234,7 +138,6 @@
 
     <!-- (4) Formulaire principal -->
     <form id="userForm">
-
       <!-- BLOC "Données irradiation" -->
       <div class="form-section">
         <h3>Données irradiation</h3>
@@ -517,9 +420,45 @@
             </tr>
           </tbody>
         </table>
+        <script>
+          function calculateCost(index) {
+            const eurosInput = document.getElementById(`euros_${index}`);
+            const kwhInput = document.getElementById(`kwh_${index}`);
+            const costPerKwhCell = document.getElementById(`costPerKwh_${index}`);
+
+            const euros = parseFloat(eurosInput.value) || 0;
+            const kwh = parseFloat(kwhInput.value) || 0;
+
+            if (kwh > 0) {
+              const costPerKwh = (euros / kwh).toFixed(2);
+              costPerKwhCell.textContent = `${costPerKwh} €`;
+            } else {
+              costPerKwhCell.textContent = "-";
+            }
+            calculateTotals();
+          }
+
+          function calculateTotals() {
+            let totalEuros = 0, totalKwh = 0;
+            for (let i = 0; i < 12; i++) {
+              const eurosVal = parseFloat(document.getElementById(`euros_${i}`).value) || 0;
+              const kwhVal = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
+              totalEuros += eurosVal;
+              totalKwh += kwhVal;
+            }
+            const averageCostPerKwh = totalKwh > 0 ? (totalEuros / totalKwh).toFixed(2) : "-";
+
+            document.getElementById("totalEuros").textContent =
+              totalEuros.toFixed(2).toLocaleString('fr-FR') + " €";
+            document.getElementById("totalKwh").textContent =
+              totalKwh.toFixed(2).toLocaleString('fr-FR') + " kWh";
+            document.getElementById("totalCostPerKwh").textContent =
+              totalKwh > 0 ? `${averageCostPerKwh} €` : "-";
+          }
+        </script>
       </div>
 
-      <!-- (NOUVEAU) BLOC "Préconisation" (avec ratio & bouton OK) -->
+      <!-- (NOUVEAU) BLOC "Préconisation" (inclut ratio diurne + bouton) -->
       <div class="form-section">
         <h3>Préconisation</h3>
 
@@ -947,6 +886,7 @@
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
     }
 
+    // On recalcule quand l’utilisateur modifie ces champs
     const surfaceInput = document.getElementById("Surface toiture");
     const exclInput = document.getElementById("exclusionPercent");
     const panelSelect = document.getElementById("puissancePanneau");
@@ -1273,7 +1213,7 @@
         const E_m1kW = monthlyProductionData[i].E_m;
         const production = S * E_m1kW;
 
-        // Ratio diurne
+        // On lit ratio diurne
         const ratioDiurneStr = document.getElementById("ratioDiurne").value || "50";
         const ratioDiurne = parseFloat(ratioDiurneStr) || 50;
         const consoKwhDiurne = consoKwh * (ratioDiurne / 100);
