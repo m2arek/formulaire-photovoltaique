@@ -111,7 +111,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -715,21 +715,28 @@
 
         updateProductionPotential();
       } else if (e.layerType === "polyline") {
-        const latLngs = layer.getLatLngs();
-        if (latLngs.length < 2) {
-          alert("Tracez au moins 2 points pour la ligne d'orientation.");
-          return;
-        }
-        const first = latLngs[0];
-        const last = latLngs[latLngs.length - 1];
-        const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
-        const aspectObj = mapAngleToAspect(angle);
-        if (aspectObj) {
-          document.getElementById("orientationIrr").value = aspectObj.aspect.toString();
-          alert(`Orientation déterminée: ${aspectObj.label} (aspect=${aspectObj.aspect})`);
-        }
-        drawnItems.removeLayer(layer);
-      }
+  const latLngs = layer.getLatLngs();
+  if (latLngs.length < 2) {
+    alert("Tracez au moins 2 points pour la ligne d'orientation.");
+    return;
+  }
+  const first = latLngs[0];
+  const last = latLngs[latLngs.length - 1];
+
+  // 1) angle = 0..360 (bearing par rapport au nord)
+  const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
+
+  // 2) Convertir en aspect = 0 => sud, + ou - => ouest/est
+  let aspectVal = angle - 180;
+  // Normalisation dans [-180..180)
+  aspectVal = (aspectVal + 180 + 360) % 360 - 180;
+
+  document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
+  alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
+
+  // En option, on retire la polyline si vous le souhaitez
+  drawnItems.removeLayer(layer);
+}
     });
 
     /***************************************************
