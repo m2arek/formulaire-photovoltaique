@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FRH PRO formulaire</title>
+  <title>FRH PRO formulaire (onglets)</title>
 
   <!-- (1) Leaflet CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
@@ -48,12 +48,68 @@
     }
 
     /****************************************************
+     * ONGLET NAVIGATION
+     ****************************************************/
+    .tabNav {
+      display: flex;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #ccc;
+    }
+    .tabNav button {
+      background: #e0efff;
+      border: none;
+      outline: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      border-right: 1px solid #ccc;
+    }
+    .tabNav button:last-child {
+      border-right: none;
+    }
+    .tabNav button:hover {
+      background-color: #a8d8ff;
+    }
+    .tabNav button.activeTab {
+      background-color: #3498db;
+      color: #fff;
+    }
+
+    /****************************************************
+     * CONTENU D'ONGLET
+     ****************************************************/
+    .tabContent {
+      display: none; /* Masqué par défaut */
+      padding: 20px 0;
+    }
+    .tabContent.activeTab {
+      display: block; /* Visible pour l’onglet actif */
+    }
+
+    /****************************************************
+     * LOGO FRH PRO
+     ****************************************************/
+    .tabLogo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .tabLogo img {
+      max-height: 50px; /* Ajustez la taille du logo si souhaité */
+      margin-right: 15px;
+    }
+    .tabLogo h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    /****************************************************
      * FORMULAIRES ET BLOCS
      ****************************************************/
     form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: block;
       margin-bottom: 20px;
     }
     .form-section {
@@ -188,6 +244,7 @@
       margin-bottom: 10px;
       margin-top: 20px;
     }
+
     /****************************************************
      * GRAPHIQUE
      ****************************************************/
@@ -202,34 +259,53 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Etude de Dimensionnement pour centrale photovoltaïque</h1>
+    <h1 class="page-title">Formulaire FRH PRO - Vue Onglets</h1>
 
-    <!-- (1) Formulaire de recherche d'adresse -->
-    <form id="addressForm" onsubmit="return searchAddress(event);">
-      <label for="address">Adresse :</label>
-      <input
-        type="text"
-        id="address"
-        name="address"
-        placeholder="Entrez une adresse"
-        required
-      />
-      <button type="submit">Rechercher</button>
-    </form>
-
-    <!-- (2) Boutons dessin -->
-    <button id="toggleDrawingButton">Activer le dessin (main levée)</button>
-    <button id="toggleMeasureButton">Mesurer une surface</button>
-
-    <!-- (3) Zone carte + canvas -->
-    <div id="map-container">
-      <div id="map"></div>
-      <canvas id="drawingCanvas"></canvas>
+    <!-- Barre de navigation (10 onglets) -->
+    <div class="tabNav" id="topTabNav">
+      <button class="tablinks" onclick="openTab(event, 'tab1')">1. Localisation / Données Irradiation</button>
+      <button class="tablinks" onclick="openTab(event, 'tab2')">2. Potentiel de Production</button>
+      <button class="tablinks" onclick="openTab(event, 'tab3')">3. Production mensuel</button>
+      <button class="tablinks" onclick="openTab(event, 'tab4')">4. Infos société</button>
+      <button class="tablinks" onclick="openTab(event, 'tab5')">5. Infos toiture</button>
+      <button class="tablinks" onclick="openTab(event, 'tab6')">6. Périodes d'utilisation</button>
+      <button class="tablinks" onclick="openTab(event, 'tab7')">7. Conso mensuelle</button>
+      <button class="tablinks" onclick="openTab(event, 'tab8')">8. Préconisation</button>
+      <button class="tablinks" onclick="openTab(event, 'tab9')">9. Préconisation Forcée</button>
+      <button class="tablinks" onclick="openTab(event, 'tab10')">10. Commentaires</button>
     </div>
 
-    <!-- (4) Formulaire principal -->
-    <form id="userForm">
-      <!-- BLOC "Données irradiation" -->
+    <!-- 1) Localisation + Données Irradiation -->
+    <div id="tab1" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Localisation & Données Irradiation</h2>
+      </div>
+
+      <!-- Formulaire de recherche d'adresse -->
+      <form id="addressForm" onsubmit="return searchAddress(event);">
+        <label for="address">Adresse :</label>
+        <input
+          type="text"
+          id="address"
+          name="address"
+          placeholder="Entrez une adresse"
+          required
+        />
+        <button type="submit">Rechercher</button>
+      </form>
+
+      <!-- Boutons dessin -->
+      <button id="toggleDrawingButton">Activer le dessin (main levée)</button>
+      <button id="toggleMeasureButton">Mesurer une surface</button>
+
+      <!-- Zone carte + canvas -->
+      <div id="map-container">
+        <div id="map"></div>
+        <canvas id="drawingCanvas"></canvas>
+      </div>
+
+      <!-- BLOC Données irradiation -->
       <div class="form-section">
         <h3>Données irradiation</h3>
 
@@ -248,11 +324,9 @@
           <option value="45">SUD-OUEST (45°)</option>
         </select>
 
-        <!-- CHAMP orientation (vrai angle) -->
         <label for="orientation">Orientation (vrai angle °) :</label>
         <input type="text" id="orientation" name="orientation" readonly />
 
-        <!-- (NOUVEAU) CHAMP ANGLE (°) -->
         <label for="angleIrr">Angle (°) :</label>
         <input
           type="number"
@@ -268,8 +342,14 @@
         <!-- Bouton calcul productible -->
         <button type="button" id="calculateIrrButton">Calculer le productible</button>
       </div>
+    </div><!-- fin tab1 -->
 
-      <!-- BLOC "Potentiel de production" -->
+    <!-- 2) Potentiel de production -->
+    <div id="tab2" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Potentiel de Production</h2>
+      </div>
       <div class="form-section">
         <h3>Potentiel de production</h3>
 
@@ -298,8 +378,14 @@
         <label for="productionInstall">Production en kWh de l'installation :</label>
         <input type="text" id="productionInstall" name="productionInstall" readonly />
       </div>
+    </div><!-- fin tab2 -->
 
-      <!-- BLOC "Production mensuel" -->
+    <!-- 3) Production mensuel -->
+    <div id="tab3" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Production mensuel</h2>
+      </div>
       <div class="form-section">
         <h3>Production mensuel</h3>
         <table id="monthlyProductionTable">
@@ -310,12 +396,18 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Rempli dynamiquement via JS (fillMonthlyProductionTable) -->
+            <!-- Rempli dynamiquement via fillMonthlyProductionTable() -->
           </tbody>
         </table>
       </div>
+    </div><!-- fin tab3 -->
 
-      <!-- 4.1) Informations société -->
+    <!-- 4) Informations société -->
+    <div id="tab4" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Informations sur la société</h2>
+      </div>
       <div class="form-section">
         <h3>Informations sur la société</h3>
         <label for="Adresse">Adresse entrée :</label>
@@ -361,8 +453,14 @@
           placeholder="Statut dans ste"
         />
       </div>
+    </div><!-- fin tab4 -->
 
-      <!-- 4.2) Informations toiture -->
+    <!-- 5) Informations toiture -->
+    <div id="tab5" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Informations sur la toiture</h2>
+      </div>
       <div class="form-section">
         <h3>Informations sur la toiture</h3>
 
@@ -420,8 +518,14 @@
           <option value="Non">Non</option>
         </select>
       </div>
+    </div><!-- fin tab5 -->
 
-      <!-- 4.3) Periodes d'utilisation -->
+    <!-- 6) Periodes d'utilisation -->
+    <div id="tab6" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Périodes d'utilisation</h2>
+      </div>
       <div class="form-section">
         <h3>Periodes d'utilisation</h3>
 
@@ -466,8 +570,14 @@
           placeholder="Puissance compteur"
         />
       </div>
+    </div><!-- fin tab6 -->
 
-      <!-- 4.4) Tableau de consommation mensuelle -->
+    <!-- 7) Conso mensuelle -->
+    <div id="tab7" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Consommation mensuelle</h2>
+      </div>
       <div id="consumptionTableContainer" class="form-section">
         <h3>Consommation mensuelle</h3>
         <table id="consumptionTable">
@@ -525,45 +635,15 @@
             </tr>
           </tbody>
         </table>
-        <script>
-          function calculateCost(index) {
-            const eurosInput = document.getElementById(`euros_${index}`);
-            const kwhInput = document.getElementById(`kwh_${index}`);
-            const costPerKwhCell = document.getElementById(`costPerKwh_${index}`);
-
-            const euros = parseFloat(eurosInput.value) || 0;
-            const kwh = parseFloat(kwhInput.value) || 0;
-
-            if (kwh > 0) {
-              const costPerKwh = (euros / kwh).toFixed(2);
-              costPerKwhCell.textContent = `${costPerKwh} €`;
-            } else {
-              costPerKwhCell.textContent = "-";
-            }
-            calculateTotals();
-          }
-
-          function calculateTotals() {
-            let totalEuros = 0, totalKwh = 0;
-            for (let i = 0; i < 12; i++) {
-              const eurosVal = parseFloat(document.getElementById(`euros_${i}`).value) || 0;
-              const kwhVal = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
-              totalEuros += eurosVal;
-              totalKwh += kwhVal;
-            }
-            const averageCostPerKwh = totalKwh > 0 ? (totalEuros / totalKwh).toFixed(2) : "-";
-
-            document.getElementById("totalEuros").textContent =
-              totalEuros.toFixed(2).toLocaleString('fr-FR') + " €";
-            document.getElementById("totalKwh").textContent =
-              totalKwh.toFixed(2).toLocaleString('fr-FR') + " kWh";
-            document.getElementById("totalCostPerKwh").textContent =
-              totalKwh > 0 ? `${averageCostPerKwh} €` : "-";
-          }
-        </script>
       </div>
+    </div><!-- fin tab7 -->
 
-      <!-- (NOUVEAU) BLOC "Préconisation" (inclut ratio diurne + bouton) -->
+    <!-- 8) Préconisation -->
+    <div id="tab8" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Préconisation</h2>
+      </div>
       <div class="form-section">
         <h3>Préconisation</h3>
 
@@ -586,7 +666,6 @@
           value="0.0761"
         />
 
-        <!-- CHAMP RATIO DIURNE (%) -->
         <label for="ratioDiurne">Ratio diurne (%) :</label>
         <input
           type="number"
@@ -597,28 +676,21 @@
           max="100"
         />
 
-        <!-- Case à cocher "Kwh visible" -->
         <label>
           <input type="checkbox" id="showKwhColumns" name="showKwhColumns" />
           Kwh visible
         </label>
 
-        <!-- Bouton => lance la fonction findBestPowerByPayback() -->
         <button type="button" id="calculatePreconisation" onclick="findBestPowerByPayback()">
           Calculer la préconisation
         </button>
 
-        <!-- Tableau mensuel (année 1) -->
         <h4>Détails par mois (année 1)</h4>
-        <table id="preconisationMonthlyTable">
-          <!-- Rempli dynamiquement via fillMonthlyPreconisation() -->
-        </table>
+        <table id="preconisationMonthlyTable"></table>
 
-        <!-- Graphique (Détails par mois) -->
         <h4>Graphique (Détails par mois)</h4>
         <canvas id="monthlyBarChart" width="600" height="300"></canvas>
 
-        <!-- Tableau sur 20 ans -->
         <h4>Projection sur 20 ans</h4>
         <table id="preconisationTable">
           <thead>
@@ -644,7 +716,6 @@
           </tfoot>
         </table>
 
-        <!-- Résumé final -->
         <div id="preconisationSummary" style="margin-top:10px;">
           <p><strong>Puissance préconisée :</strong> <span id="puissanceReco">-</span> kWc</p>
           <p><strong>Coût de l'installation :</strong> <span id="coutInstallation">-</span> €</p>
@@ -653,12 +724,17 @@
           <p><strong>ROI (années) :</strong> <span id="roiResult">-</span></p>
         </div>
       </div>
+    </div><!-- fin tab8 -->
 
-      <!-- (NOUVEAU) BLOC "Préconisation Forcée" -->
-      <div class="form-section" style="background-color:#fff8ef;">
+    <!-- 9) Préconisation Forcée -->
+    <div id="tab9" class="tabContent" style="background-color:#fff8ef;">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Préconisation Forcée</h2>
+      </div>
+      <div class="form-section">
         <h3>Préconisation Forcée</h3>
 
-        <!-- L'utilisateur saisit la puissance désirée -->
         <label for="forcedPower">Installation choisie (kWc) :</label>
         <input
           type="number"
@@ -668,7 +744,6 @@
           placeholder="Ex: 10"
           min="1"
         />
-
         <button type="button" onclick="applyForcedPreconisation()">
           Calculer la préconisation choisie
         </button>
@@ -712,8 +787,14 @@
           <p><strong>ROI (années) :</strong> <span id="roiResultForced">-</span></p>
         </div>
       </div>
+    </div><!-- fin tab9 -->
 
-      <!-- 4.5) Commentaires -->
+    <!-- 10) Commentaires -->
+    <div id="tab10" class="tabContent">
+      <div class="tabLogo">
+        <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+        <h2>Commentaires</h2>
+      </div>
       <div class="form-section">
         <h3>Commentaires</h3>
         <label for="comments">Commentaires :</label>
@@ -723,21 +804,51 @@
           placeholder="Entrez vos commentaires"
         ></textarea>
       </div>
-    </form>
 
-    <!-- (5) Boutons PDF + gestion JSON -->
-    <div style="margin-bottom:15px;">
-      <button onclick="saveMapAsPDF()">Exporter en PDF</button>
-      <button id="saveToFile">Télécharger les données</button>
-      <input type="file" id="loadFromFile" style="display: none;" />
-      <button id="uploadFile">Charger un fichier</button>
-    </div>
-  </div>
+      <!-- (5) Boutons PDF + gestion JSON -->
+      <div style="margin-bottom:15px;">
+        <button onclick="saveMapAsPDF()">Exporter en PDF</button>
+        <button id="saveToFile">Télécharger les données</button>
+        <input type="file" id="loadFromFile" style="display: none;" />
+        <button id="uploadFile">Charger un fichier</button>
+      </div>
+    </div><!-- fin tab10 -->
+  </div><!-- fin container -->
 
   <script>
+    /******************************************************
+     * GESTION DES ONGLETS
+     ******************************************************/
+    function openTab(evt, tabId) {
+      // on masque tous les tabContent
+      const tabContents = document.getElementsByClassName("tabContent");
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove("activeTab");
+      }
+      // retire la classe activeTab des boutons
+      const tablinks = document.getElementsByClassName("tablinks");
+      for (let i = 0; i < tablinks.length; i++) {
+        tablinks[i].classList.remove("activeTab");
+      }
+      // Affiche la tab demandée
+      document.getElementById(tabId).classList.add("activeTab");
+      evt.currentTarget.classList.add("activeTab");
+    }
+
+    // Par défaut, on affiche le premier onglet au chargement
+    window.addEventListener("load", function() {
+      const firstTabButton = document.querySelector(".tabNav button");
+      if (firstTabButton) {
+        firstTabButton.click();
+      }
+    });
+
     /***************************************************
-     * 1) INITIALISER LA CARTE (Google Satellite)
+     * (CI-DESSOUS : TOUT LE CODE JS "CODE FINAL"
+     *  Invariant. On le recopie intégralement.)
      ***************************************************/
+
+    // 1) INITIALISER LA CARTE (Google Satellite)
     const map = L.map("map").setView([48.8566, 2.3522], 18);
     const tileLayer = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
       maxZoom: 20,
@@ -748,9 +859,7 @@
 
     let searchMarker = null;
 
-    /***************************************************
-     * 2) DESSIN LIBRE SUR CANVAS
-     ***************************************************/
+    // 2) DESSIN LIBRE SUR CANVAS
     const drawingCanvas = document.getElementById("drawingCanvas");
     const ctx = drawingCanvas.getContext("2d");
     const AdresseField = document.getElementById("Adresse");
@@ -801,9 +910,7 @@
       ctx.stroke();
     });
 
-    /***************************************************
-     * A) OUTILS LEAFLET DRAW
-     ***************************************************/
+    // A) OUTILS LEAFLET DRAW
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
@@ -907,9 +1014,7 @@
       }
     });
 
-    /***************************************************
-     * 3) RECHERCHE D'ADRESSE + MARQUEUR
-     ***************************************************/
+    // 3) RECHERCHE D'ADRESSE + MARQUEUR
     async function searchAddress(event) {
       event.preventDefault();
       const address = document.getElementById("address").value;
@@ -940,9 +1045,7 @@
       }
     }
 
-    /***************************************************
-     * 3B) CALCUL PRODUCTIBLE (API PVGIS) + Parsing mensuel
-     ***************************************************/
+    // 3B) CALCUL PRODUCTIBLE (API PVGIS) + Parsing mensuel
     let monthlyProductionData = [];
 
     async function getProductible(lat, lon, aspectValue) {
@@ -1032,9 +1135,7 @@
       });
     }
 
-    /***************************************************
-     * 3C) CALCUL "POTENTIEL DE PRODUCTION"
-     ***************************************************/
+    // 3C) CALCUL "POTENTIEL DE PRODUCTION"
     function updateProductionPotential() {
       const surfaceStr = document.getElementById("Surface toiture").value
         .replace(/\s/g, "")
@@ -1064,7 +1165,7 @@
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
     }
 
-    // On recalcule quand l’utilisateur modifie ces champs
+    // recalc surface/potentiel
     const surfaceInput = document.getElementById("Surface toiture");
     const exclInput = document.getElementById("exclusionPercent");
     const panelSelect = document.getElementById("puissancePanneau");
@@ -1075,9 +1176,7 @@
     panelSelect.addEventListener("change", updateProductionPotential);
     productibleInput.addEventListener("input", updateProductionPotential);
 
-    /***************************************************
-     * 4) EXPORT PDF (2 PAGES)
-     ***************************************************/
+    // 4) EXPORT PDF
     function saveMapAsPDF() {
       const mapContainer = document.getElementById("map-container");
       const userForm = document.getElementById("userForm");
@@ -1119,9 +1218,7 @@
       });
     }
 
-    /***************************************************
-     * 5) SAUVEGARDER / CHARGER JSON
-     ***************************************************/
+    // 5) SAUVEGARDER / CHARGER JSON
     const saveButton = document.getElementById("saveToFile");
     const loadFileInput = document.getElementById("loadFromFile");
     const uploadButton = document.getElementById("uploadFile");
@@ -1234,19 +1331,13 @@
       }
     });
 
-    /***************************************************
-     * 6) CALCUL DU COÛT + OPTIMISATION PAR GAIN
-     *  (NOUVELLE CONTRAINTE : max autoConso, min revente)
-     *  + ratio de consommation diurne
-     ***************************************************/
-
-    // 6.1) Coût d’installation
+    // 6) CALCUL DU COÛT + OPTIMISATION PAR GAIN
+    // (NOUVELLE CONTRAINTE : max autoConso, min revente) + ratio diurne
     function costInstallation(S) {
       const raw = S * ((1.8093 - (0.00659 * S))) * 1000;
       return Math.round(raw / 100) * 100;
     }
 
-    // 6.2) Calcule autoConsoGain, surplusGain, totalGain
     function computeAutoAndSurplusForPower(S, tarifRachat) {
       const ratioDiurneStr = document.getElementById("ratioDiurne").value || "50";
       const ratioDiurne = parseFloat(ratioDiurneStr) || 50;
@@ -1280,7 +1371,6 @@
       };
     }
 
-    // 6.3) Recherche S => max autoConso, min revente, max total
     function findBestPowerByPayback() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g, "");
@@ -1323,14 +1413,13 @@
       calculatePreconisationWithPower(bestS, bestVals.totalGain);
     }
 
-    // 6.4) Applique la puissance retenue
     function calculatePreconisationWithPower(S, firstYearGain) {
       const installationCost = costInstallation(S);
       fillMonthlyPreconisation(S);
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    /**** Chart pour la préconisation "auto" ****/
+    // Graphique (auto)
     let monthlyBarChart = null;
     function createMonthlyBarChart(monthLabels, consoData, autoData, revData) {
       const ctx = document.getElementById("monthlyBarChart").getContext("2d");
@@ -1596,9 +1685,7 @@
       document.getElementById("roiResult").textContent = payback.toFixed(1);
     }
 
-    /***************************************************
-     * 7) PRÉCONISATION FORCÉE
-     ***************************************************/
+    // 7) PRÉCONISATION FORCÉE
     let monthlyBarChartForced = null;
     function createMonthlyBarChartForced(monthLabels, consoData, autoData, revData) {
       const ctx = document.getElementById("monthlyBarChartForced").getContext("2d");
@@ -1881,6 +1968,10 @@
       const forcedFirstYearGain = val.totalGain;
       fill20YearsPreconisationForced(S, forcedFirstYearGain, costInstallation(S));
     }
+
+    /******************************************************
+     * FIN DU CODE "Code Final"
+     ******************************************************/
   </script>
 </body>
 </html>
