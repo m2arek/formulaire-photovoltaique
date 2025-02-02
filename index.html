@@ -202,7 +202,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Le Formulaire pour la saisie données FRH PRO</h1>
+    <h1 class="page-title">Etude de Dimensionnement pour centrale photovoltaïque</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -251,6 +251,16 @@
         <!-- CHAMP orientation (vrai angle) -->
         <label for="orientation">Orientation (vrai angle °) :</label>
         <input type="text" id="orientation" name="orientation" readonly />
+
+        <!-- (NOUVEAU) CHAMP ANGLE (°) -->
+        <label for="angleIrr">Angle (°) :</label>
+        <input
+          type="number"
+          id="angleIrr"
+          name="angleIrr"
+          placeholder="Ex: 35"
+          value="35"
+        />
 
         <label for="productible">Productible :</label>
         <input type="text" id="productible" name="productible" placeholder="kWh/kWc/an" readonly/>
@@ -936,7 +946,10 @@
     let monthlyProductionData = [];
 
     async function getProductible(lat, lon, aspectValue) {
-      const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
+      // Lire angle depuis l'input angleIrr
+      const angleValue = parseFloat(document.getElementById("angleIrr").value) || 35;
+
+      const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=${angleValue}&aspect=${aspectValue}&usehorizon=1`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
         const response = await fetch(proxyUrl);
