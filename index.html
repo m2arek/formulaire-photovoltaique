@@ -113,7 +113,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Le Formulaire pour  la saisie des données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -1228,6 +1228,7 @@
 
       table.innerHTML = "";
 
+      // (NOUVEAU) On ajoute 3 colonnes: % Autoproduction, % Autoconsommation, % Revente
       const thead = document.createElement("thead");
       let headerRow = `<tr>
         <th>Mois</th>
@@ -1239,6 +1240,9 @@
         <th>Gains Revente</th>
         <th>Facture Avec PV</th>
         <th>Total Économies</th>
+        <th>% Autoproduction</th>
+        <th>% Autoconsommation</th>
+        <th>% Revente</th>
       </tr>`;
       thead.innerHTML = headerRow;
       table.appendChild(thead);
@@ -1257,6 +1261,9 @@
         <td id="monthlyTotalRevente">-</td>
         <td id="monthlyTotalAvecPv">-</td>
         <td id="monthlyTotalEconomies">-</td>
+        <td id="monthlyTotalAutoProdPerc">-</td>
+        <td id="monthlyTotalAutoConsoPerc">-</td>
+        <td id="monthlyTotalRevPerc">-</td>
       </tr>`;
       tfoot.innerHTML = footRow;
       table.appendChild(tfoot);
@@ -1308,6 +1315,19 @@
         sumKwhAuto += autoCons;
         sumKwhRev += surplus;
 
+        // (NOUVEAU) Calcul % Autoproduction, % Autoconsommation, % Revente
+        let autoprodPerc = 0;
+        if (consoKwh > 0) {
+          autoprodPerc = 100 * (autoCons / consoKwh);
+        }
+        let autoConsoPerc = 0;
+        let revPerc = 0;
+        let denom = autoCons + surplus;
+        if (denom > 0) {
+          autoConsoPerc = 100 * (autoCons / denom);
+          revPerc = 100 * (surplus / denom);
+        }
+
         // On remplit la ligne du tableau
         let row = document.createElement("tr");
         let rowHTML = `<td>${moisNoms[i]}</td>`;
@@ -1325,6 +1345,11 @@
         rowHTML += `<td>${revente.toFixed(2)} €</td>`;
         rowHTML += `<td>${factureAvecPv.toFixed(2)} €</td>`;
         rowHTML += `<td>${totalEco.toFixed(2)} €</td>`;
+        // (NOUVEAU) Les 3 nouvelles colonnes
+        rowHTML += `<td>${autoprodPerc.toFixed(1)}%</td>`;
+        rowHTML += `<td>${autoConsoPerc.toFixed(1)}%</td>`;
+        rowHTML += `<td>${revPerc.toFixed(1)}%</td>`;
+
         row.innerHTML = rowHTML;
         tbody.appendChild(row);
 
@@ -1334,6 +1359,7 @@
         chartRev.push(surplus);
       }
 
+      // Footer
       document.getElementById("monthlyTotalSansPv").textContent = sumSansPv.toFixed(2) + " €";
       document.getElementById("monthlyTotalAuto").textContent = sumAuto.toFixed(2) + " €";
       document.getElementById("monthlyTotalRevente").textContent = sumRev.toFixed(2) + " €";
@@ -1345,6 +1371,22 @@
         document.getElementById("monthlySumKwhAuto").textContent = sumKwhAuto.toFixed(1);
         document.getElementById("monthlySumKwhRevente").textContent = sumKwhRev.toFixed(1);
       }
+
+      // (NOUVEAU) Calculer la LIGNE des totaux pour les 3 nouvelles colonnes
+      let finalAutoProdPerc = 0;
+      if (sumKwhConso > 0) {
+        finalAutoProdPerc = 100 * (sumKwhAuto / sumKwhConso);
+      }
+      let finalAutoConsoPerc = 0;
+      let finalRevPerc = 0;
+      let denomGlobal = sumKwhAuto + sumKwhRev;
+      if (denomGlobal > 0) {
+        finalAutoConsoPerc = 100 * (sumKwhAuto / denomGlobal);
+        finalRevPerc       = 100 * (sumKwhRev   / denomGlobal);
+      }
+      document.getElementById("monthlyTotalAutoProdPerc").textContent = finalAutoProdPerc.toFixed(1) + "%";
+      document.getElementById("monthlyTotalAutoConsoPerc").textContent = finalAutoConsoPerc.toFixed(1) + "%";
+      document.getElementById("monthlyTotalRevPerc").textContent = finalRevPerc.toFixed(1) + "%";
 
       // (NOUVEAU) Appel pour créer le graphique
       createMonthlyBarChart(moisNoms, chartConso, chartAuto, chartRev);
