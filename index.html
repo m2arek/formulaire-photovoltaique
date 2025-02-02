@@ -20,7 +20,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 
-  <!-- (NOUVEAU) Chart.js pour le diagramme en barres -->
+  <!-- Chart.js pour le diagramme en barres -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -113,7 +113,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title">Le Formulaire pour  la saisie des données FRH PRO</h1>
+    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -159,7 +159,7 @@
           <option value="45">SUD-OUEST (45°)</option>
         </select>
 
-        <!-- NOUVEAU CHAMP (facultatif) -->
+        <!-- CHAMP orientation (vrai angle) -->
         <label for="orientation">Orientation (vrai angle °) :</label>
         <input type="text" id="orientation" name="orientation" readonly />
 
@@ -555,6 +555,78 @@
         </div>
       </div>
 
+      <!-- (NOUVEAU) BLOC "Préconisation Forcée" -->
+      <div class="form-section">
+        <h3>Préconisation Forcée</h3>
+
+        <!-- L'utilisateur saisit la puissance désirée -->
+        <label for="forcedPower">Installation choisie (kWc) :</label>
+        <input
+          type="number"
+          id="forcedPower"
+          name="forcedPower"
+          value="10"
+          placeholder="Ex: 10"
+          min="1"
+        />
+
+        <!-- On réutilise exactement les paramètres déjà saisis :
+             annualPriceIncrease, tarifRachat, ratioDiurne, showKwhColumns ...
+             Mais on calcule S = forcedPower -->
+        
+        <button type="button" onclick="applyForcedPreconisation()">
+          Calculer la préconisation choisie
+        </button>
+
+        <!-- Même affichage (table, graphique, etc.) qu'au-dessus -->
+        <!-- On peut soit réutiliser les MÊMES éléments HTML,
+             soit en dupliquer. Ici, on va réutiliser les mêmes (table + canvas + table 20 ans + résumé)
+             Donc on écrase leur contenu, tout comme on le fait dans fillMonthlyPreconisation. 
+             CAUTION: On retient la puissance forcée
+        -->
+
+        <!-- On réutilise EXACTEMENT le même tableau, le même Graph, etc. -->
+        <h4 style="margin-top:15px;">Détails par mois (année 1) - Forcé</h4>
+        <table id="preconisationMonthlyTableForced"></table>
+
+        <h4 style="margin-top:15px;">Graphique (Détails par mois) - Forcé</h4>
+        <canvas id="monthlyBarChartForced" width="600" height="300"></canvas>
+
+        <h4 style="margin-top:15px;">Projection sur 20 ans - Forcé</h4>
+        <table id="preconisationTableForced">
+          <thead>
+            <tr>
+              <th>Année</th>
+              <th>Facture Sans PV</th>
+              <th>Économies Autoconso</th>
+              <th>Gains Revente</th>
+              <th>Facture Avec PV</th>
+              <th>Total Économies</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <th colspan="1">Totaux sur 20 ans</th>
+              <td id="totalSansPvForced">-</td>
+              <td id="totalAutoForced">-</td>
+              <td id="totalReventeForced">-</td>
+              <td id="totalAvecPvForced">-</td>
+              <td id="totalEconomiesForced">-</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Résumé final (idem) -->
+        <div id="preconisationSummaryForced" style="margin-top:10px;">
+          <p><strong>Puissance préconisée (forcée) :</strong> <span id="puissanceRecoForced">-</span> kWc</p>
+          <p><strong>Coût de l'installation (forcé) :</strong> <span id="coutInstallationForced">-</span> €</p>
+          <p><strong>Gain total (sans inv.) :</strong> <span id="gainSansInvForced">-</span> €</p>
+          <p><strong>Gain total (avec inv.) :</strong> <span id="gainAvecInvForced">-</span> €</p>
+          <p><strong>ROI (années) :</strong> <span id="roiResultForced">-</span></p>
+        </div>
+      </div>
+
       <!-- 4.5) Commentaires -->
       <div class="form-section">
         <h3>Commentaires</h3>
@@ -740,9 +812,9 @@
         let aspectVal = angle - 180;
         aspectVal = (aspectVal + 180 + 360) % 360 - 180;
 
-        // On alimente le select 'orientationIrr'
+        // On alimente 'orientationIrr'
         document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
-        // On alimente aussi le champ 'orientation' (vrai angle)
+        // On alimente 'orientation'
         document.getElementById("orientation").value = aspectVal.toFixed(1);
 
         alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
@@ -832,8 +904,6 @@
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
-
-      // On lit le champ "orientation" (le vrai angle)
       const aspectValue = parseFloat(document.getElementById("orientation").value);
 
       if (isNaN(lat) || isNaN(lon)) {
@@ -1173,10 +1243,8 @@
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    // (NOUVEAU) Variable globale pour Chart.js
+    // (NOUVEAU) Gérer le diagramme (bar chart)
     let monthlyBarChart = null;
-
-    // (NOUVEAU) Fonction pour créer/mettre à jour le graphique
     function createMonthlyBarChart(monthLabels, consoData, autoData, revData) {
       const ctx = document.getElementById("monthlyBarChart").getContext("2d");
 
@@ -1220,7 +1288,7 @@
       });
     }
 
-    // 6.5) Construit le tableau mensuel (année 1) + GRAPH
+    // 6.5) Construit le tableau mensuel (année 1) + GRAPH + pourcentages
     function fillMonthlyPreconisation(S) {
       const showKwh = document.getElementById("showKwhColumns").checked;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1228,8 +1296,6 @@
 
       table.innerHTML = "";
 
-      // (NOUVEAU) On ajoute 3 colonnes: % Autoproduction, % Autoconsommation, % Revente
-      const thead = document.createElement("thead");
       let headerRow = `<tr>
         <th>Mois</th>
         ${ showKwh ? '<th>Conso kWh</th>' : '' }
@@ -1244,6 +1310,8 @@
         <th>% Autoconsommation</th>
         <th>% Revente</th>
       </tr>`;
+
+      const thead = document.createElement("thead");
       thead.innerHTML = headerRow;
       table.appendChild(thead);
 
@@ -1271,7 +1339,6 @@
       let sumSansPv = 0, sumAuto = 0, sumRev = 0, sumAvecPv = 0, sumEco = 0;
       let sumKwhConso = 0, sumKwhAuto = 0, sumKwhRev = 0;
 
-      // (NOUVEAU) Tableaux pour le graphique
       const chartConso = [];
       const chartAuto = [];
       const chartRev = [];
@@ -1315,7 +1382,6 @@
         sumKwhAuto += autoCons;
         sumKwhRev += surplus;
 
-        // (NOUVEAU) Calcul % Autoproduction, % Autoconsommation, % Revente
         let autoprodPerc = 0;
         if (consoKwh > 0) {
           autoprodPerc = 100 * (autoCons / consoKwh);
@@ -1328,7 +1394,6 @@
           revPerc = 100 * (surplus / denom);
         }
 
-        // On remplit la ligne du tableau
         let row = document.createElement("tr");
         let rowHTML = `<td>${moisNoms[i]}</td>`;
         if (showKwh) {
@@ -1345,7 +1410,6 @@
         rowHTML += `<td>${revente.toFixed(2)} €</td>`;
         rowHTML += `<td>${factureAvecPv.toFixed(2)} €</td>`;
         rowHTML += `<td>${totalEco.toFixed(2)} €</td>`;
-        // (NOUVEAU) Les 3 nouvelles colonnes
         rowHTML += `<td>${autoprodPerc.toFixed(1)}%</td>`;
         rowHTML += `<td>${autoConsoPerc.toFixed(1)}%</td>`;
         rowHTML += `<td>${revPerc.toFixed(1)}%</td>`;
@@ -1353,13 +1417,11 @@
         row.innerHTML = rowHTML;
         tbody.appendChild(row);
 
-        // (NOUVEAU) On alimente les tableaux pour le chart
         chartConso.push(consoKwh);
         chartAuto.push(autoCons);
         chartRev.push(surplus);
       }
 
-      // Footer
       document.getElementById("monthlyTotalSansPv").textContent = sumSansPv.toFixed(2) + " €";
       document.getElementById("monthlyTotalAuto").textContent = sumAuto.toFixed(2) + " €";
       document.getElementById("monthlyTotalRevente").textContent = sumRev.toFixed(2) + " €";
@@ -1372,7 +1434,6 @@
         document.getElementById("monthlySumKwhRevente").textContent = sumKwhRev.toFixed(1);
       }
 
-      // (NOUVEAU) Calculer la LIGNE des totaux pour les 3 nouvelles colonnes
       let finalAutoProdPerc = 0;
       if (sumKwhConso > 0) {
         finalAutoProdPerc = 100 * (sumKwhAuto / sumKwhConso);
@@ -1388,7 +1449,6 @@
       document.getElementById("monthlyTotalAutoConsoPerc").textContent = finalAutoConsoPerc.toFixed(1) + "%";
       document.getElementById("monthlyTotalRevPerc").textContent = finalRevPerc.toFixed(1) + "%";
 
-      // (NOUVEAU) Appel pour créer le graphique
       createMonthlyBarChart(moisNoms, chartConso, chartAuto, chartRev);
     }
 
@@ -1449,6 +1509,307 @@
 
       let payback = installationCost / (firstYearGain || 1);
       document.getElementById("roiResult").textContent = payback.toFixed(1);
+    }
+
+    /***************************************************
+     * NOUVEAU : Gérer la Préconisation forcée
+     ***************************************************/
+    // On va réutiliser un code quasi-identique,
+    // mais avec un second bloc HTML (table, chart, etc.)
+
+    let monthlyBarChartForced = null;
+
+    function createMonthlyBarChartForced(monthLabels, consoData, autoData, revData) {
+      const ctx = document.getElementById("monthlyBarChartForced").getContext("2d");
+
+      if (monthlyBarChartForced) {
+        monthlyBarChartForced.destroy();
+      }
+      monthlyBarChartForced = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: monthLabels,
+          datasets: [
+            {
+              label: "Conso kWh",
+              data: consoData,
+              backgroundColor: "rgba(255, 99, 132, 0.6)"
+            },
+            {
+              label: "Autoconso kWh",
+              data: autoData,
+              backgroundColor: "rgba(75, 192, 75, 0.6)"
+            },
+            {
+              label: "Revente kWh",
+              data: revData,
+              backgroundColor: "rgba(54, 162, 235, 0.6)"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "kWh"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function fillMonthlyPreconisationForced(S) {
+      // On lit la checkbox "showKwhColumns"
+      const showKwh = document.getElementById("showKwhColumns").checked;
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+      const table = document.getElementById("preconisationMonthlyTableForced");
+      table.innerHTML = "";
+
+      let headerRow = `<tr>
+        <th>Mois</th>
+        ${ showKwh ? '<th>Conso kWh</th>' : '' }
+        <th>Facture Sans PV</th>
+        ${ showKwh ? '<th>Autoconso kWh</th>' : '' }
+        <th>Économies Autoconso</th>
+        ${ showKwh ? '<th>Revente kWh</th>' : '' }
+        <th>Gains Revente</th>
+        <th>Facture Avec PV</th>
+        <th>Total Économies</th>
+        <th>% Autoproduction</th>
+        <th>% Autoconsommation</th>
+        <th>% Revente</th>
+      </tr>`;
+
+      const thead = document.createElement("thead");
+      thead.innerHTML = headerRow;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+      const tfoot = document.createElement("tfoot");
+      let footRow = `<tr>
+        <th>Totaux</th>
+        ${ showKwh ? '<td id="monthlySumKwhConsoForced">-</td>' : '' }
+        <td id="monthlyTotalSansPvForced">-</td>
+        ${ showKwh ? '<td id="monthlySumKwhAutoForced">-</td>' : '' }
+        <td id="monthlyTotalAutoForced">-</td>
+        ${ showKwh ? '<td id="monthlySumKwhReventeForced">-</td>' : '' }
+        <td id="monthlyTotalReventeForced">-</td>
+        <td id="monthlyTotalAvecPvForced">-</td>
+        <td id="monthlyTotalEconomiesForced">-</td>
+        <td id="monthlyTotalAutoProdPercForced">-</td>
+        <td id="monthlyTotalAutoConsoPercForced">-</td>
+        <td id="monthlyTotalRevPercForced">-</td>
+      </tr>`;
+      tfoot.innerHTML = footRow;
+      table.appendChild(tfoot);
+
+      let sumSansPv = 0, sumAuto = 0, sumRev = 0, sumAvecPv = 0, sumEco = 0;
+      let sumKwhConso = 0, sumKwhAuto = 0, sumKwhRev = 0;
+
+      const chartConso = [];
+      const chartAuto = [];
+      const chartRev = [];
+
+      const moisNoms = [
+        "Janvier","Février","Mars","Avril","Mai","Juin",
+        "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+      ];
+
+      for (let i=0; i<12; i++){
+        const eurosStr = document.getElementById(`euros_${i}`).value || "0";
+        const factureSansPv = parseFloat(eurosStr) || 0;
+
+        const consoKwh = parseFloat(document.getElementById(`kwh_${i}`).value) || 0;
+        const costText = document.getElementById(`costPerKwh_${i}`).textContent || "0";
+        const costUnit = parseFloat(costText) || 0;
+
+        if(!monthlyProductionData[i]) continue;
+        const E_m1kW = monthlyProductionData[i].E_m;
+        // On a S forcé
+        const ratioDiurneStr = document.getElementById("ratioDiurne").value || "50";
+        const ratioDiurne = parseFloat(ratioDiurneStr) || 50;
+        const consoKwhDiurne = consoKwh * (ratioDiurne / 100);
+
+        const production = S * E_m1kW;
+        const autoCons = Math.min(consoKwhDiurne, production);
+        const surplus = Math.max(0, production - consoKwhDiurne);
+
+        const economies = autoCons * costUnit;
+        const revente = surplus * tarifRachat;
+        const totalEco = economies + revente;
+        const factureAvecPv = factureSansPv - economies;
+
+        sumSansPv += factureSansPv;
+        sumAuto += economies;
+        sumRev += revente;
+        sumAvecPv += factureAvecPv;
+        sumEco += totalEco;
+
+        sumKwhConso += consoKwh;
+        sumKwhAuto += autoCons;
+        sumKwhRev += surplus;
+
+        let autoprodPerc = 0;
+        if (consoKwh > 0) {
+          autoprodPerc = 100 * (autoCons / consoKwh);
+        }
+        let autoConsoPerc = 0;
+        let revPerc = 0;
+        let denom = autoCons + surplus;
+        if (denom > 0) {
+          autoConsoPerc = 100 * (autoCons / denom);
+          revPerc = 100 * (surplus / denom);
+        }
+
+        let row = document.createElement("tr");
+        let rowHTML = `<td>${moisNoms[i]}</td>`;
+        if (showKwh) {
+          rowHTML += `<td>${consoKwh.toFixed(1)}</td>`;
+        }
+        rowHTML += `<td>${factureSansPv.toFixed(2)} €</td>`;
+        if (showKwh) {
+          rowHTML += `<td>${autoCons.toFixed(1)}</td>`;
+        }
+        rowHTML += `<td>${economies.toFixed(2)} €</td>`;
+        if (showKwh) {
+          rowHTML += `<td>${surplus.toFixed(1)}</td>`;
+        }
+        rowHTML += `<td>${revente.toFixed(2)} €</td>`;
+        rowHTML += `<td>${factureAvecPv.toFixed(2)} €</td>`;
+        rowHTML += `<td>${totalEco.toFixed(2)} €</td>`;
+        rowHTML += `<td>${autoprodPerc.toFixed(1)}%</td>`;
+        rowHTML += `<td>${autoConsoPerc.toFixed(1)}%</td>`;
+        rowHTML += `<td>${revPerc.toFixed(1)}%</td>`;
+
+        row.innerHTML = rowHTML;
+        tbody.appendChild(row);
+
+        chartConso.push(consoKwh);
+        chartAuto.push(autoCons);
+        chartRev.push(surplus);
+      }
+
+      document.getElementById("monthlyTotalSansPvForced").textContent = sumSansPv.toFixed(2) + " €";
+      document.getElementById("monthlyTotalAutoForced").textContent = sumAuto.toFixed(2) + " €";
+      document.getElementById("monthlyTotalReventeForced").textContent = sumRev.toFixed(2) + " €";
+      document.getElementById("monthlyTotalAvecPvForced").textContent = sumAvecPv.toFixed(2) + " €";
+      document.getElementById("monthlyTotalEconomiesForced").textContent = sumEco.toFixed(2) + " €";
+
+      if (showKwh) {
+        const sumConsoCell = document.getElementById("monthlySumKwhConsoForced");
+        const sumAutoCell  = document.getElementById("monthlySumKwhAutoForced");
+        const sumRevCell   = document.getElementById("monthlySumKwhReventeForced");
+        if (sumConsoCell) sumConsoCell.textContent = sumKwhConso.toFixed(1);
+        if (sumAutoCell)  sumAutoCell.textContent  = sumKwhAuto.toFixed(1);
+        if (sumRevCell)   sumRevCell.textContent   = sumKwhRev.toFixed(1);
+      }
+
+      let finalAutoProdPerc = 0;
+      if (sumKwhConso > 0) {
+        finalAutoProdPerc = 100 * (sumKwhAuto / sumKwhConso);
+      }
+      let finalAutoConsoPerc = 0;
+      let finalRevPerc = 0;
+      let denomGlobal = sumKwhAuto + sumKwhRev;
+      if (denomGlobal > 0) {
+        finalAutoConsoPerc = 100 * (sumKwhAuto / denomGlobal);
+        finalRevPerc       = 100 * (sumKwhRev   / denomGlobal);
+      }
+      document.getElementById("monthlyTotalAutoProdPercForced").textContent = finalAutoProdPerc.toFixed(1) + "%";
+      document.getElementById("monthlyTotalAutoConsoPercForced").textContent = finalAutoConsoPerc.toFixed(1) + "%";
+      document.getElementById("monthlyTotalRevPercForced").textContent = finalRevPerc.toFixed(1) + "%";
+
+      // tracer un second graph
+      createMonthlyBarChartForced(moisNoms, chartConso, chartAuto, chartRev);
+    }
+
+    function fill20YearsPreconisationForced(S, firstYearGain, installationCost) {
+      const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
+      const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
+
+      let baseYearStr = document.getElementById("monthlyTotalSansPvForced").textContent.replace("€","").trim();
+      let baseYearCost = parseFloat(baseYearStr) || 0;
+
+      let strEco = document.getElementById("monthlyTotalAutoForced").textContent.replace("€","").trim();
+      let strRev = document.getElementById("monthlyTotalReventeForced").textContent.replace("€","").trim();
+      let autoYear1 = parseFloat(strEco) || 0;
+      let surplusYear1 = parseFloat(strRev) || 0;
+
+      const preconTableBody = document.querySelector("#preconisationTableForced tbody");
+      preconTableBody.innerHTML = "";
+
+      let totalSansPv = 0, totalAuto = 0, totalRev = 0, totalAvecPv = 0, totalEco = 0;
+
+      for (let year=1; year<=20; year++){
+        const factureSansPv = baseYearCost * Math.pow(1 + annualPriceIncrease/100, (year-1));
+        const econAuto = autoYear1 * Math.pow(1 + annualPriceIncrease/100, (year-1));
+        const gainsRev = surplusYear1;
+        const totalEcos = econAuto + gainsRev;
+        const factureAvecPv = factureSansPv - econAuto;
+
+        totalSansPv += factureSansPv;
+        totalAuto += econAuto;
+        totalRev += gainsRev;
+        totalAvecPv += factureAvecPv;
+        totalEco += totalEcos;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${year}</td>
+          <td>${factureSansPv.toFixed(2)} €</td>
+          <td>${econAuto.toFixed(2)} €</td>
+          <td>${gainsRev.toFixed(2)} €</td>
+          <td>${factureAvecPv.toFixed(2)} €</td>
+          <td>${totalEcos.toFixed(2)} €</td>
+        `;
+        preconTableBody.appendChild(row);
+      }
+
+      document.getElementById("totalSansPvForced").textContent = totalSansPv.toFixed(2) + " €";
+      document.getElementById("totalAutoForced").textContent = totalAuto.toFixed(2) + " €";
+      document.getElementById("totalReventeForced").textContent = totalRev.toFixed(2) + " €";
+      document.getElementById("totalAvecPvForced").textContent = totalAvecPv.toFixed(2) + " €";
+      document.getElementById("totalEconomiesForced").textContent = totalEco.toFixed(2) + " €";
+
+      document.getElementById("puissanceRecoForced").textContent = S.toLocaleString('fr-FR');
+      const forcedCost = costInstallation(S);
+      document.getElementById("coutInstallationForced").textContent = forcedCost.toLocaleString('fr-FR');
+      let gainSansInvVal = totalEco;
+      document.getElementById("gainSansInvForced").textContent = gainSansInvVal.toFixed(2) + " €";
+
+      let gainAvecInvVal = totalEco - forcedCost;
+      document.getElementById("gainAvecInvForced").textContent = gainAvecInvVal.toFixed(2) + " €";
+
+      let payback = forcedCost / (firstYearGain || 1);
+      document.getElementById("roiResultForced").textContent = payback.toFixed(1);
+    }
+
+    // (NOUVEAU) lire forcedPower =>  Appliquer fillMonthlyPreconisationForced, fill20YearsPreconisationForced
+    function applyForcedPreconisation() {
+      const forcedPowerStr = document.getElementById("forcedPower").value || "1";
+      let S = parseFloat(forcedPowerStr);
+      if (isNaN(S) || S <= 0) {
+        alert("Veuillez saisir une valeur > 0 pour l'installation choisie (kWc).");
+        return;
+      }
+
+      // On refait un fill + fill20Years comme pour l'autre
+      fillMonthlyPreconisationForced(S);
+
+      // On calcule firstYearGain
+      // => computeAnnualGainForPower ?? 
+      // ou on recalc la fonction computeAutoAndSurplusForPower ?
+
+      const val = computeAutoAndSurplusForPower(S, parseFloat(document.getElementById("tarifRachat").value) || 0.0761);
+      const forcedFirstYearGain = val.totalGain;
+
+      fill20YearsPreconisationForced(S, forcedFirstYearGain, costInstallation(S));
     }
   </script>
 </body>
