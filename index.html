@@ -20,6 +20,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 
+  <!-- (NOUVEAU) Chart.js pour le diagramme en barres -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     /* Styles généraux, carte, formulaires, etc. */
     body {
@@ -110,7 +113,7 @@
 
 <body>
   <div class="container">
-    <h1 class="page-title"> Formulaire et Calculs FRH PRO</h1>
+    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -147,8 +150,7 @@
         <label for="longitudeIrr">Longitude :</label>
         <input type="text" id="longitudeIrr" name="longitudeIrr" readonly />
 
-        <!-- Ancien select Orientation -->
-        <label for="orientationIrr">Orientation (défaut) :</label>
+        <label for="orientationIrr">Orientation :</label>
         <select id="orientationIrr" name="orientationIrr">
           <option value="0">SUD (0°)</option>
           <option value="-90">EST (-90°)</option>
@@ -157,7 +159,7 @@
           <option value="45">SUD-OUEST (45°)</option>
         </select>
 
-        <!-- NOUVEAU CHAMP orientation (vrai angle) -->
+        <!-- NOUVEAU CHAMP (facultatif) -->
         <label for="orientation">Orientation (vrai angle °) :</label>
         <input type="text" id="orientation" name="orientation" readonly />
 
@@ -201,7 +203,7 @@
       <!-- BLOC "Production mensuel" -->
       <div class="form-section">
         <h3>Production mensuel</h3>
-               <table id="monthlyProductionTable">
+        <table id="monthlyProductionTable">
           <thead>
             <tr>
               <th>Mois</th>
@@ -513,6 +515,10 @@
           <!-- Rempli dynamiquement via fillMonthlyPreconisation() -->
         </table>
 
+        <!-- (NOUVEAU) Le <canvas> pour le graphique en barres -->
+        <h4 style="margin-top:15px;">Graphique (Détails par mois)</h4>
+        <canvas id="monthlyBarChart" width="600" height="300"></canvas>
+
         <!-- Tableau sur 20 ans -->
         <h4 style="margin-top:15px;">Projection sur 20 ans</h4>
         <table id="preconisationTable">
@@ -682,7 +688,6 @@
       return (brng + 360) % 360;
     }
 
-    // Ancienne version mapAngleToAspect: on la laisse, non modifiée.
     function mapAngleToAspect(angle) {
       const targets = [
         { label: "SUD", deg: 180, aspect: 0 },
@@ -728,23 +733,20 @@
         const first = latLngs[0];
         const last = latLngs[latLngs.length - 1];
 
-        // 1) angle = 0..360 (bearing par rapport au nord)
+        // angle = 0..360 (bearing par rapport au nord)
         const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
 
-        // 2) Convertir en aspect = 0 => sud, + ou - => ouest/est
+        // Convertir => aspectVal dans [-180..180] (0 = sud)
         let aspectVal = angle - 180;
-        // Normalisation dans [-180..180)
         aspectVal = (aspectVal + 180 + 360) % 360 - 180;
 
-        // On met quand même dans "orientationIrr"
+        // On alimente le select 'orientationIrr'
         document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
-
-        // NOUVEAU : recopier dans "orientation"
+        // On alimente aussi le champ 'orientation' (vrai angle)
         document.getElementById("orientation").value = aspectVal.toFixed(1);
 
         alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
 
-        // En option, on retire la polyline
         drawnItems.removeLayer(layer);
       }
     });
@@ -788,9 +790,6 @@
     let monthlyProductionData = [];
 
     async function getProductible(lat, lon, aspectValue) {
-      // On lit aspectValue = parseFloat(document.getElementById("orientation").value);
-      // SI vous voulez exploiter la "vraie" orientation
-      // autrement, aspectValue reste orientationIrr
       const originalUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?outputformat=basic&lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&peakpower=1&loss=14&pvtechchoice=crystSi&angle=35&aspect=${aspectValue}&usehorizon=1`;
       const proxyUrl = `https://corsproxy.io/?key=a32495b2&url=${encodeURIComponent(originalUrl)}`;
       try {
@@ -833,7 +832,8 @@
     document.getElementById("calculateIrrButton").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latitudeIrr").value);
       const lon = parseFloat(document.getElementById("longitudeIrr").value);
-      // CHANGEMENT : on lit la "vraie" orientation du champ "orientation"
+
+      // On lit le champ "orientation" (le vrai angle)
       const aspectValue = parseFloat(document.getElementById("orientation").value);
 
       if (isNaN(lat) || isNaN(lon)) {
@@ -1126,7 +1126,6 @@
     // 6.3) Recherche S => max autoConso, min revente, max total
     function findBestPowerByPayback() {
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
-      // ICI : on lit le champ "orientation" au lieu du select
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g, "");
       const maxPower = parseFloat(maxPowerStr) || 0;
       if (maxPower <= 0) {
@@ -1174,7 +1173,54 @@
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    // 6.5) Construit le tableau mensuel (année 1)
+    // (NOUVEAU) Variable globale pour Chart.js
+    let monthlyBarChart = null;
+
+    // (NOUVEAU) Fonction pour créer/mettre à jour le graphique
+    function createMonthlyBarChart(monthLabels, consoData, autoData, revData) {
+      const ctx = document.getElementById("monthlyBarChart").getContext("2d");
+
+      if (monthlyBarChart) {
+        monthlyBarChart.destroy();
+      }
+      monthlyBarChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: monthLabels,
+          datasets: [
+            {
+              label: "Conso kWh",
+              data: consoData,
+              backgroundColor: "rgba(255, 99, 132, 0.6)" // rouge
+            },
+            {
+              label: "Autoconso kWh",
+              data: autoData,
+              backgroundColor: "rgba(75, 192, 75, 0.6)" // vert
+            },
+            {
+              label: "Revente kWh",
+              data: revData,
+              backgroundColor: "rgba(54, 162, 235, 0.6)" // bleu
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "kWh"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 6.5) Construit le tableau mensuel (année 1) + GRAPH
     function fillMonthlyPreconisation(S) {
       const showKwh = document.getElementById("showKwhColumns").checked;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1218,6 +1264,11 @@
       let sumSansPv = 0, sumAuto = 0, sumRev = 0, sumAvecPv = 0, sumEco = 0;
       let sumKwhConso = 0, sumKwhAuto = 0, sumKwhRev = 0;
 
+      // (NOUVEAU) Tableaux pour le graphique
+      const chartConso = [];
+      const chartAuto = [];
+      const chartRev = [];
+
       const moisNoms = [
         "Janvier","Février","Mars","Avril","Mai","Juin",
         "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
@@ -1235,7 +1286,6 @@
         const E_m1kW = monthlyProductionData[i].E_m;
         const production = S * E_m1kW;
 
-        // On lit ratio diurne
         const ratioDiurneStr = document.getElementById("ratioDiurne").value || "50";
         const ratioDiurne = parseFloat(ratioDiurneStr) || 50;
         const consoKwhDiurne = consoKwh * (ratioDiurne / 100);
@@ -1258,6 +1308,7 @@
         sumKwhAuto += autoCons;
         sumKwhRev += surplus;
 
+        // On remplit la ligne du tableau
         let row = document.createElement("tr");
         let rowHTML = `<td>${moisNoms[i]}</td>`;
         if (showKwh) {
@@ -1276,6 +1327,11 @@
         rowHTML += `<td>${totalEco.toFixed(2)} €</td>`;
         row.innerHTML = rowHTML;
         tbody.appendChild(row);
+
+        // (NOUVEAU) On alimente les tableaux pour le chart
+        chartConso.push(consoKwh);
+        chartAuto.push(autoCons);
+        chartRev.push(surplus);
       }
 
       document.getElementById("monthlyTotalSansPv").textContent = sumSansPv.toFixed(2) + " €";
@@ -1289,6 +1345,9 @@
         document.getElementById("monthlySumKwhAuto").textContent = sumKwhAuto.toFixed(1);
         document.getElementById("monthlySumKwhRevente").textContent = sumKwhRev.toFixed(1);
       }
+
+      // (NOUVEAU) Appel pour créer le graphique
+      createMonthlyBarChart(moisNoms, chartConso, chartAuto, chartRev);
     }
 
     // 6.6) Remplit le tableau sur 20 ans
