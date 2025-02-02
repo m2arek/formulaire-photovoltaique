@@ -24,7 +24,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* Styles généraux, carte, formulaires, etc. */
+    /****************************************************
+     * STYLES GÉNÉRAUX
+     ****************************************************/
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -44,6 +46,10 @@
       text-align: center;
       margin-bottom: 30px;
     }
+
+    /****************************************************
+     * FORMULAIRES ET BLOCS
+     ****************************************************/
     form {
       display: flex;
       flex-direction: column;
@@ -55,7 +61,38 @@
       padding: 15px;
       border-radius: 5px;
       border: 1px solid #ddd;
+      margin-bottom: 20px;
     }
+    .form-section h3 {
+      background-color: #e0efff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    .form-section label {
+      font-weight: 500;
+      margin-top: 5px;
+      display: block;
+    }
+    .form-section input[type="text"],
+    .form-section input[type="number"],
+    .form-section input[type="time"],
+    .form-section textarea,
+    .form-section select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+
+    /****************************************************
+     * TABLES
+     ****************************************************/
     table {
       border: 1px solid #ddd;
       border-collapse: collapse;
@@ -70,6 +107,13 @@
     table thead {
       background-color: #f0f0f0;
     }
+    table tbody tr:hover {
+      background-color: #f7faff; /* Couleur hover */
+    }
+
+    /****************************************************
+     * CARTE, BOUTONS
+     ****************************************************/
     #map-container {
       position: relative;
       width: 100%;
@@ -104,16 +148,61 @@
       cursor: pointer;
       margin-right: 5px;
       margin-bottom: 5px;
+      transition: background-color 0.3s ease, transform 0.2s;
     }
     button:hover {
       background-color: #2980b9;
+      transform: scale(1.03);
+    }
+
+    /****************************************************
+     * CHECKBOX GRID
+     ****************************************************/
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 5px 10px;
+      margin-top: 5px;
+    }
+    .checkbox-grid label {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+      background: #fff;
+      padding: 5px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .checkbox-grid input[type="checkbox"] {
+      margin-right: 6px;
+    }
+
+    /****************************************************
+     * SURCHARGE QUELQUES TITRES
+     ****************************************************/
+    h4 {
+      background-color: #f7f8ff;
+      padding: 6px;
+      border-left: 3px solid #3498db;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+    /****************************************************
+     * GRAPHIQUE
+     ****************************************************/
+    #monthlyBarChart,
+    #monthlyBarChartForced {
+      background-color: #fff; /* Couleur de fond du canvas */
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1 class="page-title">Le Formulaire pour saisie données FRH PRO</h1>
+    <h1 class="page-title">Le Formulaire pour la saisie données FRH PRO</h1>
 
     <!-- (1) Formulaire de recherche d'adresse -->
     <form id="addressForm" onsubmit="return searchAddress(event);">
@@ -510,17 +599,17 @@
         </button>
 
         <!-- Tableau mensuel (année 1) -->
-        <h4 style="margin-top:15px;">Détails par mois (année 1)</h4>
+        <h4>Détails par mois (année 1)</h4>
         <table id="preconisationMonthlyTable">
           <!-- Rempli dynamiquement via fillMonthlyPreconisation() -->
         </table>
 
-        <!-- (NOUVEAU) Le <canvas> pour le graphique en barres -->
-        <h4 style="margin-top:15px;">Graphique (Détails par mois)</h4>
+        <!-- Graphique (Détails par mois) -->
+        <h4>Graphique (Détails par mois)</h4>
         <canvas id="monthlyBarChart" width="600" height="300"></canvas>
 
         <!-- Tableau sur 20 ans -->
-        <h4 style="margin-top:15px;">Projection sur 20 ans</h4>
+        <h4>Projection sur 20 ans</h4>
         <table id="preconisationTable">
           <thead>
             <tr>
@@ -545,7 +634,7 @@
           </tfoot>
         </table>
 
-        <!-- Résumé final sous le tableau -->
+        <!-- Résumé final -->
         <div id="preconisationSummary" style="margin-top:10px;">
           <p><strong>Puissance préconisée :</strong> <span id="puissanceReco">-</span> kWc</p>
           <p><strong>Coût de l'installation :</strong> <span id="coutInstallation">-</span> €</p>
@@ -556,7 +645,7 @@
       </div>
 
       <!-- (NOUVEAU) BLOC "Préconisation Forcée" -->
-      <div class="form-section">
+      <div class="form-section" style="background-color:#fff8ef;">
         <h3>Préconisation Forcée</h3>
 
         <!-- L'utilisateur saisit la puissance désirée -->
@@ -570,29 +659,17 @@
           min="1"
         />
 
-        <!-- On réutilise exactement les paramètres déjà saisis :
-             annualPriceIncrease, tarifRachat, ratioDiurne, showKwhColumns ...
-             Mais on calcule S = forcedPower -->
-        
         <button type="button" onclick="applyForcedPreconisation()">
           Calculer la préconisation choisie
         </button>
 
-        <!-- Même affichage (table, graphique, etc.) qu'au-dessus -->
-        <!-- On peut soit réutiliser les MÊMES éléments HTML,
-             soit en dupliquer. Ici, on va réutiliser les mêmes (table + canvas + table 20 ans + résumé)
-             Donc on écrase leur contenu, tout comme on le fait dans fillMonthlyPreconisation. 
-             CAUTION: On retient la puissance forcée
-        -->
-
-        <!-- On réutilise EXACTEMENT le même tableau, le même Graph, etc. -->
-        <h4 style="margin-top:15px;">Détails par mois (année 1) - Forcé</h4>
+        <h4>Détails par mois (année 1) - Forcé</h4>
         <table id="preconisationMonthlyTableForced"></table>
 
-        <h4 style="margin-top:15px;">Graphique (Détails par mois) - Forcé</h4>
+        <h4>Graphique (Détails par mois) - Forcé</h4>
         <canvas id="monthlyBarChartForced" width="600" height="300"></canvas>
 
-        <h4 style="margin-top:15px;">Projection sur 20 ans - Forcé</h4>
+        <h4>Projection sur 20 ans - Forcé</h4>
         <table id="preconisationTableForced">
           <thead>
             <tr>
@@ -617,7 +694,6 @@
           </tfoot>
         </table>
 
-        <!-- Résumé final (idem) -->
         <div id="preconisationSummaryForced" style="margin-top:10px;">
           <p><strong>Puissance préconisée (forcée) :</strong> <span id="puissanceRecoForced">-</span> kWc</p>
           <p><strong>Coût de l'installation (forcé) :</strong> <span id="coutInstallationForced">-</span> €</p>
@@ -812,9 +888,7 @@
         let aspectVal = angle - 180;
         aspectVal = (aspectVal + 180 + 360) % 360 - 180;
 
-        // On alimente 'orientationIrr'
         document.getElementById("orientationIrr").value = aspectVal.toFixed(1);
-        // On alimente 'orientation'
         document.getElementById("orientation").value = aspectVal.toFixed(1);
 
         alert("Orientation déterminée : " + aspectVal.toFixed(1) + "° (0 = Sud)");
@@ -1243,7 +1317,7 @@
       fill20YearsPreconisation(S, firstYearGain, installationCost);
     }
 
-    // (NOUVEAU) Gérer le diagramme (bar chart)
+    /**** Chart pour la préconisation "auto" ****/
     let monthlyBarChart = null;
     function createMonthlyBarChart(monthLabels, consoData, autoData, revData) {
       const ctx = document.getElementById("monthlyBarChart").getContext("2d");
@@ -1288,7 +1362,6 @@
       });
     }
 
-    // 6.5) Construit le tableau mensuel (année 1) + GRAPH + pourcentages
     function fillMonthlyPreconisation(S) {
       const showKwh = document.getElementById("showKwhColumns").checked;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1452,7 +1525,6 @@
       createMonthlyBarChart(moisNoms, chartConso, chartAuto, chartRev);
     }
 
-    // 6.6) Remplit le tableau sur 20 ans
     function fill20YearsPreconisation(S, firstYearGain, installationCost) {
       const annualPriceIncrease = parseFloat(document.getElementById("annualPriceIncrease").value) || 5;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
@@ -1512,13 +1584,9 @@
     }
 
     /***************************************************
-     * NOUVEAU : Gérer la Préconisation forcée
+     * 7) PRÉCONISATION FORCÉE
      ***************************************************/
-    // On va réutiliser un code quasi-identique,
-    // mais avec un second bloc HTML (table, chart, etc.)
-
     let monthlyBarChartForced = null;
-
     function createMonthlyBarChartForced(monthLabels, consoData, autoData, revData) {
       const ctx = document.getElementById("monthlyBarChartForced").getContext("2d");
 
@@ -1563,7 +1631,6 @@
     }
 
     function fillMonthlyPreconisationForced(S) {
-      // On lit la checkbox "showKwhColumns"
       const showKwh = document.getElementById("showKwhColumns").checked;
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
       const table = document.getElementById("preconisationMonthlyTableForced");
@@ -1631,7 +1698,6 @@
 
         if(!monthlyProductionData[i]) continue;
         const E_m1kW = monthlyProductionData[i].E_m;
-        // On a S forcé
         const ratioDiurneStr = document.getElementById("ratioDiurne").value || "50";
         const ratioDiurne = parseFloat(ratioDiurneStr) || 50;
         const consoKwhDiurne = consoKwh * (ratioDiurne / 100);
@@ -1664,7 +1730,7 @@
         let denom = autoCons + surplus;
         if (denom > 0) {
           autoConsoPerc = 100 * (autoCons / denom);
-          revPerc = 100 * (surplus / denom);
+          revPerc       = 100 * (surplus / denom);
         }
 
         let row = document.createElement("tr");
@@ -1725,7 +1791,6 @@
       document.getElementById("monthlyTotalAutoConsoPercForced").textContent = finalAutoConsoPerc.toFixed(1) + "%";
       document.getElementById("monthlyTotalRevPercForced").textContent = finalRevPerc.toFixed(1) + "%";
 
-      // tracer un second graph
       createMonthlyBarChartForced(moisNoms, chartConso, chartAuto, chartRev);
     }
 
@@ -1790,7 +1855,6 @@
       document.getElementById("roiResultForced").textContent = payback.toFixed(1);
     }
 
-    // (NOUVEAU) lire forcedPower =>  Appliquer fillMonthlyPreconisationForced, fill20YearsPreconisationForced
     function applyForcedPreconisation() {
       const forcedPowerStr = document.getElementById("forcedPower").value || "1";
       let S = parseFloat(forcedPowerStr);
@@ -1799,16 +1863,9 @@
         return;
       }
 
-      // On refait un fill + fill20Years comme pour l'autre
       fillMonthlyPreconisationForced(S);
-
-      // On calcule firstYearGain
-      // => computeAnnualGainForPower ?? 
-      // ou on recalc la fonction computeAutoAndSurplusForPower ?
-
       const val = computeAutoAndSurplusForPower(S, parseFloat(document.getElementById("tarifRachat").value) || 0.0761);
       const forcedFirstYearGain = val.totalGain;
-
       fill20YearsPreconisationForced(S, forcedFirstYearGain, costInstallation(S));
     }
   </script>
