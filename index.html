@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FRH PRO formulaire (onglets)</title>
+  <title>FRH PRO Optimisation PV</title>
 
   <!-- (1) Leaflet CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
@@ -56,7 +56,7 @@
       border-bottom: 2px solid #ccc;
     }
     .tabNav button {
-      background: #c0ddff;
+      background: #c0ddff; 
       border: none;
       outline: none;
       padding: 10px 20px;
@@ -80,11 +80,11 @@
      * CONTENU D'ONGLET
      ****************************************************/
     .tabContent {
-      display: none; /* Masqué par défaut */
+      display: none; 
       padding: 20px 0;
     }
     .tabContent.activeTab {
-      display: block; /* Visible pour l’onglet actif */
+      display: block; 
     }
 
     /****************************************************
@@ -275,16 +275,15 @@
       <button type="button" class="tablinks" onclick="openTab(event, 'tab10')">10. Commentaires</button>
     </div>
 
-    <!-- On place TOUTES les infos dans un SEUL formulaire -->
+    <!-- Formulaire global -->
     <form id="userForm">
-      <!-- 1) Localisation + Données Irradiation -->
+      <!-- TAB 1) Localisation + Données Irradiation -->
       <div id="tab1" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Localisation & Données Irradiation</h2>
         </div>
 
-        <!-- Formulaire de recherche d'adresse -->
         <label for="address">Adresse :</label>
         <input
           type="text"
@@ -293,7 +292,6 @@
           placeholder="Entrez une adresse"
           required
         />
-        <!-- "Rechercher" => type=button + event.preventDefault() -->
         <button type="button" onclick="searchAddress(event);">Rechercher</button>
 
         <!-- Boutons dessin -->
@@ -340,15 +338,14 @@
           <label for="productible">Productible :</label>
           <input type="text" id="productible" name="productible" placeholder="kWh/kWc/an" readonly/>
 
-          <!-- Bouton calcul productible => type=button -->
           <button type="button" id="calculateIrrButton">Calculer le productible</button>
         </div>
       </div><!-- fin tab1 -->
 
-      <!-- 2) Potentiel de production -->
+      <!-- TAB 2) Potentiel de production -->
       <div id="tab2" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Potentiel de Production</h2>
         </div>
         <div class="form-section">
@@ -381,10 +378,10 @@
         </div>
       </div><!-- fin tab2 -->
 
-      <!-- 3) Production mensuel -->
+      <!-- TAB 3) Production mensuel -->
       <div id="tab3" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Production mensuel</h2>
         </div>
         <div class="form-section">
@@ -403,10 +400,10 @@
         </div>
       </div><!-- fin tab3 -->
 
-      <!-- 4) Informations société -->
+      <!-- TAB 4) Informations société -->
       <div id="tab4" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Informations sur la société</h2>
         </div>
         <div class="form-section">
@@ -456,10 +453,10 @@
         </div>
       </div><!-- fin tab4 -->
 
-      <!-- 5) Informations toiture -->
+      <!-- TAB 5) Informations toiture -->
       <div id="tab5" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Informations sur la toiture</h2>
         </div>
         <div class="form-section">
@@ -521,10 +518,10 @@
         </div>
       </div><!-- fin tab5 -->
 
-      <!-- 6) Periodes d'utilisation -->
+      <!-- TAB 6) Periodes d'utilisation -->
       <div id="tab6" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Périodes d'utilisation</h2>
         </div>
         <div class="form-section">
@@ -573,10 +570,10 @@
         </div>
       </div><!-- fin tab6 -->
 
-      <!-- 7) Conso mensuelle -->
+      <!-- TAB 7) Conso mensuelle -->
       <div id="tab7" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Consommation mensuelle</h2>
         </div>
         <div id="consumptionTableContainer" class="form-section">
@@ -605,7 +602,6 @@
                           type="number"
                           id="euros_${index}"
                           name="euros_${index}"
-                          class="euroInput"
                           oninput="calculateCost(${index})"
                           placeholder="€"
                           style="width: 90%;"
@@ -616,7 +612,6 @@
                           type="number"
                           id="kwh_${index}"
                           name="kwh_${index}"
-                          class="kwhInput"
                           oninput="calculateCost(${index})"
                           placeholder="kWh"
                           style="width: 90%;"
@@ -639,10 +634,10 @@
         </div>
       </div><!-- fin tab7 -->
 
-      <!-- 8) Préconisation -->
+      <!-- TAB 8) Préconisation -->
       <div id="tab8" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Préconisation</h2>
         </div>
         <div class="form-section">
@@ -682,6 +677,7 @@
             Kwh visible
           </label>
 
+          <!-- IMPORTANT: onClick => findBestPowerByPayback() -->
           <button type="button" id="calculatePreconisation" onclick="findBestPowerByPayback()">
             Calculer la préconisation
           </button>
@@ -727,10 +723,10 @@
         </div>
       </div><!-- fin tab8 -->
 
-      <!-- 9) Préconisation Forcée -->
+      <!-- TAB 9) Préconisation Forcée -->
       <div id="tab9" class="tabContent" style="background-color:#fff8ef;">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Préconisation Forcée</h2>
         </div>
         <div class="form-section">
@@ -790,10 +786,10 @@
         </div>
       </div><!-- fin tab9 -->
 
-      <!-- 10) Commentaires -->
+      <!-- TAB 10) Commentaires -->
       <div id="tab10" class="tabContent">
         <div class="tabLogo">
-          <img src="your_frh_logo.png" alt="FRH Pro Logo"/>
+          <img src="C:\Users\Kevin\Downloads\archelios\frh_pro_logo.png" alt="FRH Pro Logo"/>
           <h2>Commentaires</h2>
         </div>
         <div class="form-section">
@@ -822,21 +818,17 @@
      * GESTION DES ONGLETS + AJUSTEMENT CARTE
      ******************************************************/
     function openTab(evt, tabId) {
-      // on masque tous les tabContent
       const tabContents = document.getElementsByClassName("tabContent");
       for (let i = 0; i < tabContents.length; i++) {
         tabContents[i].classList.remove("activeTab");
       }
-      // retire la classe activeTab des boutons
       const tablinks = document.getElementsByClassName("tablinks");
       for (let i = 0; i < tablinks.length; i++) {
         tablinks[i].classList.remove("activeTab");
       }
-      // Affiche la tab demandée
       document.getElementById(tabId).classList.add("activeTab");
       evt.currentTarget.classList.add("activeTab");
 
-      // Ajuster la carte si on revient sur l'onglet 1
       if (tabId === 'tab1') {
         setTimeout(() => {
           map.invalidateSize();
@@ -844,7 +836,6 @@
       }
     }
 
-    // Par défaut, on affiche le premier onglet au chargement
     window.addEventListener("load", function() {
       const firstTabButton = document.querySelector(".tabNav button");
       if (firstTabButton) {
@@ -1008,10 +999,8 @@
         const first = latLngs[0];
         const last = latLngs[latLngs.length - 1];
 
-        // angle = 0..360 (bearing par rapport au nord)
         const angle = computeBearing(first.lat, first.lng, last.lat, last.lng);
 
-        // Convertir => aspectVal dans [-180..180] (0 = sud)
         let aspectVal = angle - 180;
         aspectVal = (aspectVal + 180 + 360) % 360 - 180;
 
@@ -1057,7 +1046,7 @@
     }
 
     /***************************************************
-     * 3B) CALCUL PRODUCTIBLE (API PVGIS) + Parsing mensuel
+     * 3B) CALCUL PRODUCTIBLE (API PVGIS)
      ***************************************************/
     let monthlyProductionData = [];
 
@@ -1178,7 +1167,6 @@
       document.getElementById("productionInstall").value = production.toLocaleString('fr-FR');
     }
 
-    // recalc surface/potentiel
     const surfaceInput = document.getElementById("Surface toiture");
     const exclInput = document.getElementById("exclusionPercent");
     const panelSelect = document.getElementById("puissancePanneau");
@@ -1265,7 +1253,6 @@
       const shapesGeoJSON = drawnItems.toGeoJSON();
       formObject["drawnShapes"] = shapesGeoJSON;
 
-      // Sauvegarde la production mensuelle
       formObject["monthlyProductionData"] = monthlyProductionData;
 
       const companyName = formObject["companyName"] || "Formulaire";
@@ -1298,7 +1285,6 @@
               return;
             }
             if (Array.isArray(dataValue)) {
-              // Pour les checkbox multiples (ex: moisConges[], joursConges[])
               dataValue.forEach((val) => {
                 const checkbox = form.querySelector(`[name="${key}"][value="${val}"]`);
                 if (checkbox) {
@@ -1313,14 +1299,12 @@
             }
           });
 
-          // Replace la vue carte
           if (jsonData["mapCenterLat"] !== undefined &&
               jsonData["mapCenterLng"] !== undefined &&
               jsonData["mapZoom"] !== undefined) {
             map.setView([jsonData["mapCenterLat"], jsonData["mapCenterLng"]], jsonData["mapZoom"]);
           }
 
-          // Replace l'image dessinée
           if (jsonData["canvasImage"]) {
             const image = new Image();
             image.onload = function () {
@@ -1330,7 +1314,6 @@
             image.src = jsonData["canvasImage"];
           }
 
-          // Replace les formes dessinées
           if (jsonData["drawnShapes"]) {
             drawnItems.clearLayers();
             L.geoJson(jsonData["drawnShapes"]).eachLayer(function(layer) {
@@ -1338,17 +1321,14 @@
             });
           }
 
-          // Replace la production mensuelle
           if (jsonData["monthlyProductionData"]) {
             monthlyProductionData = jsonData["monthlyProductionData"];
             fillMonthlyProductionTable(monthlyProductionData);
           }
 
-          // Recalcule la conso (cost/kWh) pour chaque mois
           for (let i = 0; i < 12; i++) {
             calculateCost(i);
           }
-          // Recalcule potentiel
           updateProductionPotential();
         };
         reader.readAsText(file);
@@ -1435,6 +1415,7 @@
     }
 
     function findBestPowerByPayback() {
+      console.log("==> findBestPowerByPayback triggered!");
       const tarifRachat = parseFloat(document.getElementById("tarifRachat").value) || 0.0761;
       let maxPowerStr = (document.getElementById("puissanceMaxPV").value || "0").replace(/\s/g, "");
       const maxPower = parseFloat(maxPowerStr) || 0;
